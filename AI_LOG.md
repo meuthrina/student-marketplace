@@ -15,7 +15,7 @@
 Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keamanan Komputasi & Siber Universitas Pertamina:
 - Penggunaan AI Assistant (Gemini) dimanfaatkan sebagai *Full Project Mentor*, *Thought Partner*, dan *Drafting Assistant*.
 - Seluruh keputusan arsitektur, pemodelan ancaman, justifikasi nilai risiko, penanganan aksesibilitas WCAG 2.2 AA, serta validasi kebenaran logika/skrip adalah **tanggung jawab penuh pengembang (mahasiswa)**.
-- Mahasiswa sanggup mempertahankan dan mempertanggungjawabkan setiap bagian dari kode, artefak DFD, model ancaman STRIDE, dan register risiko saat demonstrasi serta evaluasi produk.
+- Mahasiswa sanggup mempertahankan dan mempertanggungjawabkan setiap bagian dari kode, artefak DFD, model ancaman STRIDE, register risiko, serta modul pengujian kriptografi saat demonstrasi dan evaluasi produk.
 
 ---
 
@@ -100,7 +100,36 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
 
 ---
 
-## Ringkasan Integrasi AI pada Artefak Tugas 1 PAW & KKS
+## Log Riwayat Penggunaan AI — Section 3: Kriptografi (Tugas 1 Kriptografi - Pekan 1–3)
+
+### Tahap 1: Pemetaan Kebutuhan Kriptografi & Komponen Dasar
+- **Tanggal / Tanggal Interaksi:** 12 Oktober 2026
+- **Asisten AI:** Gemini (Role: Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 1 Kriptografi (Sub-CPMK 3 - Komponen Dasar & Vektor Uji)
+- **Prompt / Permintaan Pengguna:**
+  Merancang modul fungsi kriptografi dasar yang terhubung langsung dengan *Threat Model* Keamanan Siber (`T-10`: pemalsuan token lencana mahasiswa & `T-04`: penyangkalan integritas bukti pengerjaan proyek).
+- **Hasil & Luaran AI:**
+  - Pustaka logika `src/lib/crypto/token-verifier.ts` (HMAC-SHA256 untuk lencana mahasiswa terkanonisasi)[cite: 125, 137, 140].
+  - Pustaka logika `src/lib/crypto/document-signer.ts` (SHA-256 Digest untuk verifikasi integritas bukti proyek)[cite: 125, 137, 140].
+- **Tindakan & Validasi Pengembang (Mahasiswa):**
+  - Menggunakan modul native `node:crypto` guna menjamin keamanan engine V8 dan menghindari dependensi *third-party* yang rentan *supply chain attack*[cite: 125, 133].
+  - Menyelaraskan kanonisasi string input pada generator HMAC agar mendukung sifat deterministik *Test Vector*[cite: 125, 137].
+
+### Tahap 2: Formulasi Skenario Uji & Troubleshooting Runner
+- **Tanggal / Tanggal Interaksi:** 12 Oktober 2026
+- **Asisten AI:** Gemini (Role: Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 1 Kriptografi (Sub-CPMK 3 - Minimal 3 dari 4 Uji Berhasil)
+- **Prompt / Permintaan Pengguna:**
+  Menyusun skrip pengujian unit 4 skenario (`U-10A`, `U-10B`, `U-12`, `K-01`), mengatasi galat `ERESOLVE peer dependency` pada npm, serta mengatasi galat `rolldown / node:util styleText` pada Vitest[cite: 125, 127, 137].
+- **Hasil & Luaran AI:**
+  Saran penggunaan `--legacy-peer-deps` dan konversi runner pengujian menggunakan `tsx` + `node:assert`[cite: 127].
+- **Tindakan & Validasi Pengembang (Mahasiswa):**
+  - Mengganti bundler Vitest/Vite dengan `tsx` agar eksekusi pengujian ringan, bebas bentrok versi Node.js lokal, dan lulus 100% pada 4 skenario uji[cite: 124, 127].
+  - Memperbarui tabel pengujian pada `README.md` sehingga secara eksplisit menampilkan 4 skenario uji Kriptografi terhubung ke ID Ancaman.
+
+---
+
+## Ringkasan Integrasi AI pada Artefak Tugas 1 PAW, KKS, & Kriptografi
 
 | Nama Berkas Artefak | Kontribusi AI Assistant | Penyelarasan & Validasi Mahasiswa |
 | :--- | :--- | :--- |
@@ -112,4 +141,6 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
 | `security/data-flow-diagram.md` | Draf struktur teks, penjelasan legenda DFD, dan contoh konkret aliran data. | Verifikasi kesesuaian dengan arsitektur Next.js + PostgreSQL + Docker Host. |
 | `security/threat-model.md` | Draf 11 entri STRIDE-per-Element dengan sintaks NIST SP 800-30. | Pemastian ketiadaan duplikasi ID (`T-01` s.d. `T-11`) dan validitas klausa ancaman. |
 | `security/risk-register.md` | Draf perhitungan skor risiko ($L \times I$) dan usulan rencana mitigasi. | Penyesuaian skala resmi KKS dan penetapan 5 risiko prioritas utama (*Very High*). |
-| `AI_LOG.md` | Draf format catatan transparansi penggunaan AI. | Pengisian riwayat prompt, tanggal, dan pengesahan etika akademis terintegrasi. |
+| `src/lib/crypto/*` | Draf logika fungsi `token-verifier.ts` dan `document-signer.ts`. | Penggunaan `node:crypto` native dan kanonisasi payload deterministik. |
+| `lib/crypto/tests/*` | Draf skrip unit test 4 skenario uji kriptografi. | Migrasi ke `tsx` + `node:assert` untuk hasil pengujian 100% PASS. |
+| `AI_LOG.md` | Draf format catatan transparansi penggunaan AI 3 mata kuliah. | Pengisian riwayat prompt, tanggal, dan pengesahan etika akademis terintegrasi. |
