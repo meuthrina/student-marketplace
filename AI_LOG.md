@@ -1,6 +1,6 @@
 # AI Log: Catatan Pemanfaatan Kecerdasan Artifisial (AI Assistant)
 
-**Nama Produk:** Student Freelance Marketplace (MVP)  
+**Nama Produk:** Studance — Student Freelance Marketplace Platform (MVP)  
 **Pemilik Proyek / Pengembang:** Iman Dwi Satrio (NIM: 105224029)  
 **Program Studi / Universitas:** Ilmu Komputer, Universitas Pertamina  
 **Mata Kuliah Terkait:**
@@ -14,12 +14,51 @@
 
 Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keamanan Komputasi & Siber Universitas Pertamina:
 - Penggunaan AI Assistant (Gemini) dimanfaatkan sebagai *Full Project Mentor*, *Thought Partner*, dan *Drafting Assistant*.
-- Seluruh keputusan arsitektur, pemodelan ancaman, justifikasi nilai risiko, serta validasi kebenaran logika/skrip adalah **tanggung jawab penuh pengembang (mahasiswa)**.
-- Mahasiswa sanggup mempertahankan dan mempertanggungjawabkan setiap bagian dari kode, artefak DFD, model ancaman STRIDE, dan register risiko saat demonstrasi serta evaluasi.
+- Seluruh keputusan arsitektur, pemodelan ancaman, justifikasi nilai risiko, penanganan aksesibilitas WCAG 2.2 AA, serta validasi kebenaran logika/skrip adalah **tanggung jawab penuh pengembang (mahasiswa)**.
+- Mahasiswa sanggup mempertahankan dan mempertanggungjawabkan setiap bagian dari kode, artefak DFD, model ancaman STRIDE, dan register risiko saat demonstrasi serta evaluasi produk.
 
 ---
 
-## Log Riwayat Penggunaan AI (Tugas 1 KKS - Pekan 1–3)
+## Log Riwayat Penggunaan AI — Section 1: Pengembangan Aplikasi Web (Tugas 1 PAW - Pekan 1–3)
+
+### Tahap 1: Grounding Arsitektur Antarmuka & Token Design System
+- **Tanggal / Tanggal Interaksi:** 10–12 Oktober 2026
+- **Asisten AI:** Gemini (Role: Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 1 PAW (Sub-CPMK 2 - Antarmuka Web Responsif & Aksesibel)
+- **Prompt / Permintaan Pengguna:**
+  Merancang token CSS *Liquid Glassmorphism* (`styles/globals.css`), pengunci aksesibilitas WCAG 2.2 AA (`focus-visible` & `prefers-reduced-motion`), serta Component Tree React sesuai slide materi PAW Pekan 3.
+- **Hasil & Luaran AI:**
+  Draf token CSS, komponen atomik (`VerifiedBadge.tsx` & `ScopeBadge.tsx`), serta diagram Mermaid React Component Tree yang membedakan *Server Components* dan *Client Components* (`"use client"`).
+- **Tindakan & Validasi Pengembang (Mahasiswa):**
+  - Mengoreksi dan memisahkan sintaks CSS agar tidak terbungkus markdown code block yang memicu `CssSyntaxError` pada Next.js Turbopack.
+  - Memastikan rasio kontras warna lencana (*Emerald Verified* & *Amber Scope*) memenuhi batas aksesibilitas minimum 4.5:1.
+
+### Tahap 2: Layout Global & Fitur Beranda Catalog
+- **Tanggal / Tanggal Interaksi:** 11–12 Oktober 2026
+- **Asisten AI:** Gemini (Role: Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 1 PAW (Sub-CPMK 2 - Layout & Reusable Components)
+- **Prompt / Permintaan Pengguna:**
+  Membangun `Navbar.tsx` dengan *Context Role Switcher* (`[ 🎓 Freelancer | 💼 Klien ]`), `MobileNav.tsx` (Glass Bottom Bar), `HeroSection.tsx`, `ScopeFilterBar.tsx`, `ProjectCard.tsx`, `ServiceCard.tsx`, dan `app/page.tsx`.
+- **Hasil & Luaran AI:**
+  Kode TypeScript modular untuk seluruh komponen layout dan fitur beranda dengan pencarian dan penyaringan data tiruan (`mockData.ts`).
+- **Tindakan & Validasi Pengembang (Mahasiswa):**
+  - Mengintegrasikan React `<Suspense>` boundary pada `MobileNav.tsx` untuk mencegah galat prerendering `usePathname()` saat build.
+
+### Tahap 3: Detail Proyek, Modal Bidding, & Verifikasi Kampus
+- **Tanggal / Tanggal Interaksi:** 12 Oktober 2026
+- **Asisten AI:** Gemini (Role: Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 1 PAW (Sub-CPMK 2 - Routing, Form Validation, & Multi-page)
+- **Prompt / Permintaan Pengguna:**
+  Membangun rute detail proyek `app/projects/[id]/page.tsx` dengan modal proposal (`BidModalForm`), serta rute verifikasi email kampus & token OTP `app/(auth)/auth/verify-student/page.tsx`.
+- **Hasil & Luaran AI:**
+  Kode TypeScript untuk halaman detail proyek, validasi masukan modal (biaya, durasi, proposal, lampiran 5MB), dan alur multi-step verifikasi OTP.
+- **Tindakan & Validasi Pengembang (Mahasiswa):**
+  - Melakukan refactoring penanganan `use(params)` menggunakan React `<Suspense>` boundary untuk kepatuhan Next.js 15+ App Router.
+  - Memperbaiki struktur direktori Route Group `app/(auth)/auth/verify-student/page.tsx` agar rute URL `http://localhost:3000/auth/verify-student` dapat diakses tanpa galat 404.
+
+---
+
+## Log Riwayat Penggunaan AI — Section 2: Keamanan Komputasi & Siber (Tugas 1 KKS - Pekan 1–3)
 
 ### Tahap 1: Grounding Arsitektur & Perancangan DFD Level 0
 - **Tanggal / Tanggal Interaksi:** 9 Oktober 2026
@@ -34,8 +73,6 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - Menggambar DFD secara manual/visual dan menyimpannya sebagai berkas gambar `security/assets/data-flow-diagram.png`.
   - Menyusun berkas `security/docs/data-flow-diagram.md` yang memuat penataan tabel notasi, deskripsi elemen, dan contoh konkret *data flow*.
 
----
-
 ### Tahap 2: Pemodelan Ancaman (STRIDE-per-Element)
 - **Tanggal / Tanggal Interaksi:** 9 Oktober 2026
 - **Asisten AI:** Gemini (Role: Full Project Mentor)
@@ -48,12 +85,10 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - Meninjau *Threat Statements* agar tidak sekadar memuat kelas kerentanan (*vulnerability*), melainkan secara spesifik memuat *threat source*, *tindakan*, *elemen*, *kelemahan*, dan *dampak* (NIST format).
   - Memastikan konsistensi penamaan ID `T-01` s.d. `T-11` pada berkas `security/threat-model.md`.
 
----
-
 ### Tahap 3: Risk Assessment & Risk Register (NIST SP 800-30)
 - **Tanggal / Tanggal Interaksi:** 9 Oktober 2026
 - **Asisten AI:** Gemini (Role: Full Project Mentor)
-- **Kompatibilitas Tugas:** Tugas 1 KKS (Sub-CPMK 1 - Risk Register & Prioritasi)[cite: 336, 340]
+- **Kompatibilitas Tugas:** Tugas 1 KKS (Sub-CPMK 1 - Risk Register & Prioritasi)
 - **Prompt / Permintaan Pengguna:**
   Menilai *Likelihood* (L) dan *Impact* (I) untuk 11 ancaman, menentukan 5 risiko prioritas *Very High*, serta merumuskan rencana kontrol yang terhubung ke tugas akademis 3 mata kuliah.
 - **Hasil & Luaran AI:**
@@ -65,11 +100,16 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
 
 ---
 
-## Ringkasan Integrasi AI pada Artefak Tugas 1 KKS
+## Ringkasan Integrasi AI pada Artefak Tugas 1 PAW & KKS
 
 | Nama Berkas Artefak | Kontribusi AI Assistant | Penyelarasan & Validasi Mahasiswa |
 | :--- | :--- | :--- |
+| `styles/globals.css` | Usulan token warna dan utility class glassmorphism. | Pembersihan sintaks CSS dari karakter markdown pendukung Turbopack. |
+| `components/ui/*` | Draf komponen `VerifiedBadge.tsx` dan `ScopeBadge.tsx`. | Penyesuaian rasio kontras warna dan atribut aksesibilitas WCAG 2.2 AA. |
+| `components/layout/*` | Draf `Navbar.tsx`, `MobileNav.tsx`, dan `Footer.tsx`. | Pembungkusan `MobileNav` dengan React `<Suspense>` boundary. |
+| `app/projects/[id]/page.tsx` | Draf halaman detail proyek dan modal `BidModalForm`. | Pembungkusan `use(params)` dengan React `<Suspense>` boundary untuk Next.js 15+. |
+| `app/(auth)/auth/verify-student/page.tsx` | Draf formulir input email kampus dan blok OTP. | Penyesuaian struktur direktori folder agar URL `/auth/verify-student` berfungsi tanpa 404. |
 | `security/data-flow-diagram.md` | Draf struktur teks, penjelasan legenda DFD, dan contoh konkret aliran data. | Verifikasi kesesuaian dengan arsitektur Next.js + PostgreSQL + Docker Host. |
 | `security/threat-model.md` | Draf 11 entri STRIDE-per-Element dengan sintaks NIST SP 800-30. | Pemastian ketiadaan duplikasi ID (`T-01` s.d. `T-11`) dan validitas klausa ancaman. |
 | `security/risk-register.md` | Draf perhitungan skor risiko ($L \times I$) dan usulan rencana mitigasi. | Penyesuaian skala resmi KKS dan penetapan 5 risiko prioritas utama (*Very High*). |
-| `AI_LOG.md` | Draf format catatan transparansi penggunaan AI. | Pengisian riwayat prompt, tanggal, dan pengesahan etika akademis. |
+| `AI_LOG.md` | Draf format catatan transparansi penggunaan AI. | Pengisian riwayat prompt, tanggal, dan pengesahan etika akademis terintegrasi. |
