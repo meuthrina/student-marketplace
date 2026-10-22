@@ -51,6 +51,7 @@ export interface Project {
   clientId: string;
   clientName: string;
   clientAvatar: string;
+  clientRole?: string;
   isClientVerifiedStudent?: boolean; // True jika Klien juga Mahasiswa Terverifikasi
   skillTags: string[];
   status: ProjectStatus;

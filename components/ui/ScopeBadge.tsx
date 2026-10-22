@@ -27,67 +27,43 @@ export const ScopeBadge: React.FC<ScopeBadgeProps> = ({
 }) => {
   const isCampusSpecific = scope === 'CAMPUS_SPECIFIC';
 
-  // Penyesuaian ukuran padding, font, dan ikon
   const sizeClasses =
     size === 'sm'
-      ? 'px-2.5 py-1 text-[0.75rem] gap-1.5'
-      : 'px-3.5 py-1.5 text-[0.875rem] gap-2';
+      ? 'px-3 py-[7px] text-xs gap-1.5'
+      : 'px-3.5 py-2 text-sm gap-2';
 
-  const iconSizes = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
-
-  // Label teks yang dinamis
   const displayLabel = isCampusSpecific
-    ? `Campus-Specific: ${targetCampus || 'Kampus Khusus'}`
+    ? `Campus-Specific: ${targetCampus || 'Universitas Pertamina'}`
     : 'Public Project';
 
   return (
     <span
       role="status"
+      title={displayLabel}
       aria-label={`Cakupan Proyek: ${displayLabel}`}
-      className={`inline-flex max-w-full min-w-0 items-center font-medium rounded-[var(--radius-pill)] transition-all duration-150 border ${sizeClasses} ${className}`}
-      style={{
-        backgroundColor: isCampusSpecific
-          ? 'var(--color-warning-bg)'
-          : 'var(--color-info-bg)',
-        color: isCampusSpecific
-          ? 'var(--color-amber)'
-          : 'var(--color-primary)',
-        borderColor: isCampusSpecific
-          ? 'rgba(245, 160, 0, 0.3)'
-          : 'rgba(98, 82, 204, 0.25)',
-      }}
+      className={`inline-flex max-w-full min-w-0 items-center font-medium rounded-full overflow-hidden transition-all duration-150 ${sizeClasses} ${
+        isCampusSpecific
+          ? 'bg-[#FEF3C7] text-[#78350F]'
+          : 'bg-[#DBEAFE] text-[#1E40AF]'
+      } ${className}`}
     >
-      {/* SVG Icon: Gembok Shield untuk Campus-Specific, Globe/Layers untuk Public */}
-      {isCampusSpecific ? (
-        <svg
-          className={`${iconSizes} shrink-0`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-0.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
-            clipRule="evenodd"
-          />
-        </svg>
-      ) : (
-        <svg
-          className={`${iconSizes} shrink-0`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 002 2h.5a.5.5 0 01.5.5v1.5a.5.5 0 01-.5.5h-2a.5.5 0 01-.5-.5v-.5a1 1 0 00-1-1H7.5a1.5 1.5 0 01-1.5-1.5v-.473z"
-            clipRule="evenodd"
-          />
-        </svg>
-      )}
+      {/* SVG Icon: shield-check as per Figma design system */}
+      <svg
+        className="w-4 h-4 shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
 
       {/* Label Teks */}
-      <span className="min-w-0 truncate font-semibold">{displayLabel}</span>
+      <span className="min-w-0 truncate">{displayLabel}</span>
     </span>
   );
 };

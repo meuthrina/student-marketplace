@@ -1,58 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #5648c7;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #e8e6ff;
+  /* ─── Brand / Primary ─── */
+  --color-primary: #4338ca;
+  --color-primary-hover: #3730a3;
+  --color-primary-light: #e8e7fc;
   --color-primary-start: #4338ca;
   --color-primary-end: #6553d6;
+
+  /* ─── Accent / Status ─── */
   --color-teal: #0f766e;
   --color-emerald: #10b981;
   --color-amber: #b7791f;
   --color-danger: #dc4c4c;
 
-  --color-text-primary: #172036;
-  --color-text-secondary: #53617b;
-  --color-text-muted: #78859d;
+  /* ─── Text ─── */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #475569;
   --color-text-inverse: #ffffff;
 
-  --color-background: #f1f1ff;
+  /* ─── Surfaces ─── */
+  --color-background: #f0f1fb;
   --color-surface: #ffffff;
-  --color-surface-soft: #e5e5f7;
+  --color-surface-soft: #e8e7fc;
   --color-surface-muted: #f7f7fd;
   --color-surface-dark: #10182d;
 
-  --color-border: #dfe3f2;
+  /* ─── Borders ─── */
+  --color-border: #d8ddec;
   --color-border-strong: #cbd3e8;
+
+  /* ─── Semantic bg ─── */
   --color-success-bg: #d8f7ee;
   --color-warning-bg: #fff0c7;
   --color-danger-bg: #ffe0e1;
   --color-info-bg: #dce9ff;
 
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.9);
+  /* ─── Glass / Blur ─── */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 1);
   --glass-shadow: 0 20px 40px rgba(27, 35, 69, 0.08);
   --glass-bg-dark: rgba(16, 24, 45, 0.94);
   --glass-border-dark: rgba(255, 255, 255, 0.14);
 
+  /* ─── Shadows ─── */
   --shadow-card: 0 8px 24px rgba(27, 35, 69, 0.06);
   --shadow-card-hover: 0 16px 32px rgba(27, 35, 69, 0.12);
   --shadow-dropdown: 0 20px 40px rgba(27, 35, 69, 0.12);
+  --shadow-navbar: 0 20px 40px rgba(0, 0, 0, 0.08);
 
+  /* ─── Radii ─── */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-pill: 9999px;
 
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
+  /* ─── Typography ─── */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.375rem;  /* 22px */
+  --font-size-3xl: 2.25rem;   /* 36px */
   --line-height-body: 1.5;
   --line-height-heading: 1.2;
+
+  /* ─── Transitions ─── */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
 }
@@ -74,7 +90,7 @@
     margin: 0;
     background: var(--color-background);
     color: var(--color-text-primary);
-    font-family: var(--font-main);
+    font-family: var(--font-main), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: var(--font-size-base);
     line-height: var(--line-height-body);
     -webkit-font-smoothing: antialiased;
@@ -124,6 +140,7 @@
 }
 
 @layer utilities {
+  /* ─── Glass Card (light) ─── */
   .surface-card,
   .glass-card {
     border-radius: var(--radius-xl);
@@ -142,29 +159,20 @@
     -webkit-backdrop-filter: blur(20px);
   }
 
-  .glass-card-dark {
-    color: var(--color-text-inverse);
-    background: var(--glass-bg-dark);
-    border: 1px solid var(--glass-border-dark);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-dropdown);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-  }
-
+  /* ─── Input ─── */
   .glass-input {
     width: 100%;
     color: var(--color-text-primary);
-    background: rgba(255, 255, 255, 0.82);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); /* 16px */
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   }
 
   .glass-input:focus {
     background: var(--color-surface);
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(86, 72, 199, 0.18);
+    box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15);
     outline: none;
   }
 
@@ -172,66 +180,9 @@
     color: var(--color-text-muted);
   }
 
+  /* ─── Gradients ─── */
   .bg-brand-gradient {
     background: linear-gradient(110deg, var(--color-primary-start), var(--color-primary-end));
-  }
-
-  .bg-brand-gradient-horizontal {
-    background: linear-gradient(100deg, #2f2b78 0%, #5648c7 48%, #0f9295 100%);
-  }
-
-  .btn-primary {
-    display: inline-flex;
-    min-height: 48px;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-pill);
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    padding: 0 18px;
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    box-shadow: var(--shadow-card);
-    transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  }
-
-  .btn-primary:hover {
-    background: var(--color-primary-hover);
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    display: inline-flex;
-    min-height: 48px;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.72);
-    color: var(--color-text-primary);
-    padding: 0 18px;
-    font-size: var(--font-size-sm);
-    font-weight: 700;
-    box-shadow: var(--shadow-card);
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
-  }
-
-  .btn-secondary:hover {
-    background: var(--color-surface);
-  }
-
-  .btn-secondary:focus-visible {
-    border-color: var(--color-primary);
-  }
-
-  .card-hover {
-    transition: box-shadow var(--transition-normal), border-color var(--transition-normal), transform var(--transition-normal);
-  }
-
-  .card-hover:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-2px);
   }
 
   .text-muted {

@@ -1,22 +1,27 @@
 import React from 'react';
 
+export type VerifiedBadgeSize = 'sm' | 'md';
+
 export interface VerifiedBadgeProps {
   /** Domain kampus terverifikasi (opsional), misal: "universitaspertamina.ac.id" */
   campusDomain?: string;
-  /** Ukuran visual badge: 'sm' untuk kartu/tabel, 'md' untuk header/modal */
-  size?: 'sm' | 'md';
+  /** Ukuran visual badge: 'sm' untuk kartu/tabel/katalog, 'md' untuk detail proyek/modal */
+  size?: VerifiedBadgeSize;
   /** Kustomisasi kelas Tailwind tambahan */
   className?: string;
-  /** Teks label khusus jika ingin mengganti default "Verified Student" */
+  /** Teks label (default: "Verified Student") */
   label?: string;
 }
 
 /**
  * VerifiedBadge Component
  *
- * Indikator visual status mahasiswa terverifikasi kampus.
- * Menggunakan prinsip WCAG 2.2 AA (kontras warna & SVG semantik)
- * serta token Liquid Glassmorphism dari styles/globals.css.
+ * Indikator visual resmi identitas mahasiswa terverifikasi kampus.
+ * Menggunakan standar warna konsisten:
+ * - Background: #CFFAFE (Cyan 100)
+ * - Teks & Ikon: #115E59 (Teal 800, WCAG 2.2 AA compliant)
+ * - Border: #0F766E/20 (Teal 700 subtle border)
+ * Serta atribut aksesibilitas semantik `role="status"` dan `aria-label`.
  */
 export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   campusDomain,
@@ -24,44 +29,44 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   className = '',
   label = 'Verified Student',
 }) => {
-  // Penyesuaian ukuran padding, font, dan ikon berdasarkan prop size
   const sizeClasses =
     size === 'sm'
-      ? 'px-2.5 py-0.5 text-[0.75rem] gap-1'
-      : 'px-3 py-1 text-[0.875rem] gap-1.5';
+      ? 'px-3 py-[7px] text-xs gap-1.5'
+      : 'px-3.5 py-2 text-sm gap-2';
 
-  const iconSizes = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+  const iconSizes = size === 'sm' ? 'w-4 h-4' : 'w-4.5 h-4.5';
+
+  const fullLabel = campusDomain
+    ? `${label} (${campusDomain})`
+    : label;
 
   return (
     <span
       role="status"
-      aria-label={`${label}${campusDomain ? ` - ${campusDomain}` : ''}`}
-      className={`inline-flex min-w-0 max-w-full items-center font-medium rounded-[var(--radius-pill)] transition-all duration-150 border ${sizeClasses} ${className}`}
-      style={{
-        backgroundColor: 'var(--color-success-bg)',
-        color: 'var(--color-teal)',
-        borderColor: 'rgba(15, 146, 149, 0.25)',
-      }}
+      aria-label="Mahasiswa Terverifikasi"
+      title={fullLabel}
+      className={`inline-flex max-w-full min-w-0 items-center font-medium rounded-full bg-[#CFFAFE] text-[#115E59] border border-[#0F766E]/20 transition-all select-none ${sizeClasses} ${className}`}
     >
-      {/* SVG Icon Checkmark Shield / Badge */}
+      {/* SVG Icon: Shield with Checkmark (WCAG Semantic) */}
       <svg
-        className={`${iconSizes} shrink-0`}
-        viewBox="0 0 20 20"
-        fill="currentColor"
+        className={`${iconSizes} shrink-0 text-[#115E59]`}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path
-          fillRule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-          clipRule="evenodd"
-        />
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="m9 12 2 2 4-4" />
       </svg>
 
-      {/* Label Teks */}
+      {/* Label Text */}
       <span className="min-w-0 truncate">
         {label}
         {campusDomain && (
-          <span className="ml-1 inline-block max-w-[180px] truncate align-bottom font-normal opacity-80 sm:max-w-[220px]">
+          <span className="ml-1 font-normal opacity-80">
             ({campusDomain})
           </span>
         )}

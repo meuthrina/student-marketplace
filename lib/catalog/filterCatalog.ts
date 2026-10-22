@@ -4,6 +4,7 @@ export interface CatalogFilters {
   searchQuery: string;
   selectedCategory: string;
   selectedScope: 'ALL' | ProjectScope;
+  minPrice?: number;
   maxPrice: number;
 }
 
@@ -21,8 +22,17 @@ export function filterProjects(projects: Project[], filters: CatalogFilters) {
       includesQuery(project.category, filters.selectedCategory);
     const matchesScope =
       filters.selectedScope === 'ALL' || project.scope === filters.selectedScope;
+    const matchesMinPrice =
+      typeof filters.minPrice === 'number' ? project.budget >= filters.minPrice : true;
+    const matchesMaxPrice = project.budget <= filters.maxPrice;
 
-    return matchesSearch && matchesCategory && matchesScope && project.budget <= filters.maxPrice;
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesScope &&
+      matchesMinPrice &&
+      matchesMaxPrice
+    );
   });
 }
 
@@ -34,7 +44,10 @@ export function filterServices(services: ServiceOffering[], filters: CatalogFilt
     const matchesCategory =
       filters.selectedCategory === 'Semua' ||
       includesQuery(service.category, filters.selectedCategory);
+    const matchesMinPrice =
+      typeof filters.minPrice === 'number' ? service.price >= filters.minPrice : true;
+    const matchesMaxPrice = service.price <= filters.maxPrice;
 
-    return matchesSearch && matchesCategory && service.price <= filters.maxPrice;
+    return matchesSearch && matchesCategory && matchesMinPrice && matchesMaxPrice;
   });
 }

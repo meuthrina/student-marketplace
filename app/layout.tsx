@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
-import { Inter } from 'next/font/google'
+import { Google_Sans } from 'next/font/google';
 import { Suspense } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { Footer } from '@/components/layout/Footer';
+import { RoleProvider } from '@/contexts/RoleContext';
 
-const inter = Inter({
+const googleSans = Google_Sans({
   subsets: ['latin'],
   variable: '--font-main',
+  display: 'swap',
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -29,7 +32,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#6252cc',
+  themeColor: '#4338ca',
 };
 
 interface RootLayoutProps {
@@ -45,7 +48,7 @@ interface RootLayoutProps {
  */
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="id" className={`scroll-smooth ${inter.variable}`} >
+    <html lang="id" className={`scroll-smooth ${googleSans.variable}`} >
       <body className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-text-primary)] antialiased selection:bg-[var(--color-primary)] selection:text-white">
         {/* Link Aksesibilitas Langsung ke Konten Utama (WCAG 2.2 AA) */}
         <a
@@ -55,21 +58,23 @@ export default function RootLayout({ children }: RootLayoutProps) {
           Lompat ke konten utama
         </a>
 
-        {/* 1. Navbar Navigation Bar (Floating Glassmorphism Header) */}
-        <Navbar />
+        <RoleProvider>
+          {/* 1. Navbar Navigation Bar (Floating Glassmorphism Header) */}
+          <Navbar />
 
-        {/* 2. Main Active Page Content Container */}
-        <main id="main-content" className="flex-1 w-full focus:outline-none">
-          {children}
-        </main>
+          {/* 2. Main Active Page Content Container */}
+          <main id="main-content" className="flex-1 w-full focus:outline-none pb-20 sm:pb-0">
+            {children}
+          </main>
 
-        {/* 3. Footer Section (Kepercayaan, Navigasi, & Hak Cipta) */}
-        <Suspense fallback={null}>
-          <Footer />
-        </Suspense>
+          {/* 3. Footer Section (Kepercayaan, Navigasi, & Hak Cipta) */}
+          <Suspense fallback={null}>
+            <Footer />
+          </Suspense>
 
-        {/* 4. Mobile Bottom Navigation Bar (Khusus Layar <= 640px) */}
-        <MobileNav />
+          {/* 4. Mobile Bottom Navigation Bar (Khusus Layar <= 640px) */}
+          <MobileNav />
+        </RoleProvider>
       </body>
     </html>
   );

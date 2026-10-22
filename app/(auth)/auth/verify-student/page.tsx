@@ -3,15 +3,22 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
-import { mockCurrentUser } from '@/lib/mockData';
+import { useRole } from '@/contexts/RoleContext';
+import {
+  requestVerificationToken,
+  verifyStudentTokenAction,
+} from '@/app/actions/verifyStudent';
 
 function VerifyStudentContent() {
+  const { currentUser, setIsVerifiedStudent } = useRole();
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(currentUser?.email || '');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [demoOtp, setDemoOtp] = useState<string>('');
+  const [tokenPreview, setTokenPreview] = useState<string>('');
 
   // Helper handling OTP Input Focus Next Box
   const handleOtpChange = (index: number, value: string) => {
@@ -27,25 +34,38 @@ function VerifyStudentContent() {
     }
   };
 
-  // Step 1: Request OTP Email Kampus Validation
-  const handleRequestOtp = (e: React.FormEvent) => {
+  // Step 1: Request OTP Email Kampus Validation via Server Action
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email.endsWith('.ac.id')) {
-      setError('Email harus menggunakan domain kampus resmi berakhiran .ac.id (misal: @universitaspertamina.ac.id)');
+    if (!email.toLowerCase().endsWith('.ac.id')) {
+      setError(
+        'Email harus menggunakan domain kampus resmi berakhiran .ac.id (misal: @student.universitaspertamina.ac.id)'
+      );
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      const studentId = currentUser.studentId || '105224029';
+      const result = await requestVerificationToken(email, studentId);
+      if (result.success) {
+        setDemoOtp(result.demoOtp || '');
+        setTokenPreview(result.tokenPreview || '');
+        setStep(2);
+      } else {
+        setError(result.message);
+      }
+    } catch {
+      setError('Terjadi kendala saat menghubungi server verifikasi. Silakan coba lagi.');
+    } finally {
       setIsLoading(false);
-      setStep(2);
-    }, 1000);
+    }
   };
 
-  // Step 2: Verify 6-Digit OTP Token (Mock Static Validation: '123456')
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  // Step 2: Verify 6-Digit OTP Token via Server Action (HMAC-SHA256 Cryptographic Check)
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const fullOtp = otp.join('');
@@ -62,17 +82,27 @@ function VerifyStudentContent() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const studentId = currentUser.studentId || '105224029';
+      const result = await verifyStudentTokenAction(
+        email,
+        studentId,
+        fullOtp
+      );
 
-      if (fullOtp === '123456') {
+      if (result.success) {
+        setIsVerifiedStudent(true);
         setStep(3); // Verified Success
       } else {
         const remaining = attemptsLeft - 1;
         setAttemptsLeft(remaining);
-        setError(`Kode OTP salah! Sisa percobaan: ${remaining} kali. (Petunjuk demo: gunakan '123456')`);
+        setError(`${result.message} Sisa percobaan: ${remaining} kali.`);
       }
-    }, 1000);
+    } catch {
+      setError('Gagal memverifikasi token di server. Silakan coba kembali.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -128,17 +158,17 @@ function VerifyStudentContent() {
                 placeholder="nama@universitaspertamina.ac.id"
                 className="glass-input w-full px-3.5 py-2.5 text-xs rounded-[var(--radius-md)]"
               />
-              <p className="text-[0.688rem] text-[var(--color-text-muted)]">
-                Sistem akan mengirorkan token OTP 6-digit ke email universitas Anda.
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Sistem akan memproses token OTP 6-digit terverifikasi ke email universitas Anda.
               </p>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs rounded-[var(--radius-pill)] transition-all shadow-md cursor-pointer"
+              className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs rounded-[var(--radius-pill)] transition-all shadow-md cursor-pointer disabled:opacity-50"
             >
-              {isLoading ? 'Mengirim Token OTP...' : 'Kirim Kode OTP Verifikasi'}
+              {isLoading ? 'Memproses Token Kriptografi...' : 'Kirim Kode OTP Verifikasi'}
             </button>
           </form>
         )}
@@ -146,11 +176,29 @@ function VerifyStudentContent() {
         {/* STEP 2: FORM 6-DIGIT OTP TOKEN */}
         {step === 2 && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
+            {/* Dev Preview Mode Notice (DFD F5/F6/F7 Verification Demo) */}
+            {demoOtp && (
+              <div className="p-3.5 bg-indigo-50/90 border border-indigo-200 text-indigo-900 rounded-[var(--radius-md)] text-xs space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <span aria-hidden="true">🔑</span>
+                    <span>Dev Preview (Token HMAC Server):</span>
+                  </span>
+                  <span className="font-mono bg-indigo-200/90 px-2.5 py-1 rounded text-indigo-950 font-bold tracking-widest text-sm shadow-2xs">
+                    {demoOtp}
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-700 leading-relaxed">
+                  Token OTP 6-digit ini di-generate secara deterministik dari tanda tangan kriptografi HMAC-SHA256 institusi (HMAC Prefix: <code className="font-mono font-bold">{tokenPreview}</code>). Salin atau masukkan angka di atas untuk memvalidasi.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2 text-center">
               <label className="block text-xs font-bold text-[var(--color-text-primary)]">
                 Masukkan 6-Digit Kode OTP
               </label>
-              <p className="text-[0.75rem] text-[var(--color-text-muted)]">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Kode dikirim ke <span className="font-bold text-[var(--color-text-primary)]">{email}</span>
               </p>
 
@@ -162,6 +210,7 @@ function VerifyStudentContent() {
                     id={`otp-input-${index}`}
                     type="text"
                     maxLength={1}
+                    aria-label={`Digit OTP ${index + 1}`}
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     className="w-10 h-12 text-center font-extrabold text-lg glass-input rounded-[var(--radius-md)] focus:ring-2 focus:ring-[var(--color-primary)]"
@@ -175,7 +224,7 @@ function VerifyStudentContent() {
               disabled={isLoading || attemptsLeft === 0}
               className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs rounded-[var(--radius-pill)] transition-all shadow-md cursor-pointer disabled:bg-gray-300"
             >
-              {isLoading ? 'Memverifikasi Kode...' : 'Verifikasi OTP'}
+              {isLoading ? 'Memvalidasi Tanda Tangan Kriptografis...' : 'Verifikasi OTP'}
             </button>
 
             <div className="text-center">

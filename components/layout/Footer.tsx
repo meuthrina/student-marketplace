@@ -7,10 +7,14 @@ import { usePathname } from 'next/navigation';
 export const Footer: React.FC = () => {
   const pathname = usePathname();
 
-  if (pathname === '/' || pathname.startsWith('/projects/') || pathname.startsWith('/services/')) {
+  if (pathname === '/') {
+    return null;
+  }
+
+  if (pathname.startsWith('/projects/') || pathname.startsWith('/services/')) {
     return (
-      <footer className="w-full border-t border-[var(--color-border)] bg-[var(--color-surface-soft)] px-5 py-3 text-[0.5rem] leading-relaxed text-[var(--color-text-muted)] sm:px-6 lg:px-0">
-        <div className="mx-auto max-w-[1160px] space-y-1">
+      <footer className="w-full border-t border-[var(--color-border)] bg-[var(--color-surface-soft)] px-5 py-3 text-xs leading-relaxed text-[var(--color-text-muted)] sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-1">
           <p className="font-semibold text-[var(--color-primary)]">MVP - View 1 - FR01 - discovery</p>
           <p>Contoh statis. Filter keyword, kategori, anggaran, dan kampus perlu diimplementasi. Semua Kampus = seluruh katalog MVP Universitas Pertamina.</p>
           <p>© 2026 Studance - Universitas Pertamina. Seluruh hak cipta dilindungi.</p>
@@ -24,7 +28,7 @@ export const Footer: React.FC = () => {
       aria-label="Penutup Halaman dan Informasi Hak Cipta"
       className="w-full mt-16 pb-24 md:pb-12 px-4 sm:px-6 lg:px-8 border-t border-[var(--color-border)] bg-[var(--color-surface-muted)]"
     >
-      <div className="mx-auto max-w-[1160px] space-y-8 pb-6 pt-10">
+      <div className="mx-auto max-w-7xl space-y-8 pb-6 pt-10">
         {/* 1. Trust Engine Feature Block ("Kolaborasi dengan Kepercayaan") */}
         <div className="glass-card p-6 sm:p-8 rounded-[var(--radius-xl)] space-y-4">
           <div className="space-y-2">
@@ -121,7 +125,7 @@ export const Footer: React.FC = () => {
             <p className="text-xs text-[var(--color-text-secondary)]">
               Dikembangkan sebagai Pilot Project terintegrasi untuk mahasiswa Universitas Pertamina.
             </p>
-            <span className="inline-block text-[0.688rem] font-semibold text-[var(--color-primary)] bg-[var(--color-primary-light)] px-2.5 py-1 rounded-md">
+            <span className="inline-block text-xs font-semibold text-[var(--color-primary)] bg-[var(--color-primary-light)] px-2.5 py-1 rounded-md">
               Pilot Version v0.1
             </span>
           </div>

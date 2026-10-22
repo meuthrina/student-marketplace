@@ -11,9 +11,14 @@ interface HeroSectionProps {
 /**
  * HeroSection Component
  *
- * Seksi banner utama beranda (FR-01) yang menampilkan proposisi nilai utama,
- * bilah pencarian interaktif, dan tag kategori cepat.
- * Mematuhi kriteria WCAG 2.2 AA (semantic section & accessible form control).
+ * Seksi banner utama beranda (FR-01) sesuai spesifikasi Figma Tablet (720px) & Mobile:
+ * - Headline: Inter 700 36px / lh 43.2px, color #0F172A
+ * - Subtitle: Inter 400 16px / lh 24px, color #475569
+ * - Search field: Label 14px/400, Input 52px tall, p-14px, rounded-16px, border #D8DDEC
+ * - Catalog switch: 31px pills, active #4338CA, inactive #E8E7FC
+ * - Categories: 6 pills on single row on tablet (UI/UX, Web Dev, Mobile, Data, Content, Translation)
+ *
+ * Menggunakan Tailwind CSS murni, tanpa default style property inline.
  */
 export const HeroSection: React.FC<HeroSectionProps> = ({
   onSearchChange,
@@ -21,7 +26,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   selectedCategory = 'Semua',
 }) => {
   const categories = [
-    'Semua',
     'UI/UX',
     'Web Dev',
     'Mobile',
@@ -33,68 +37,87 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   return (
     <section
       aria-label="Banner Utama dan Pencarian Marketplace"
-      className="w-full px-5 pb-4 pt-4 sm:px-6 lg:px-0 lg:pt-2"
+      className="w-full flex flex-col gap-4"
     >
-      <div className="mx-auto max-w-[1160px] space-y-3">
-        
-        {/* Main Headline */}
-        <div className="max-w-[820px] space-y-2">
-          <h1 className="max-w-[700px] text-[1.55rem] font-extrabold leading-[1.05] tracking-tight text-[var(--color-text-primary)] sm:text-3xl lg:text-[2rem]">
-            Talenta Mahasiswa Terverifikasi untuk Proyek Anda
-          </h1>
-          <p className="text-[0.688rem] leading-relaxed text-[var(--color-text-secondary)] sm:text-xs">
-            Temukan kolaborator kampus. Ubah ide menjadi karya nyata bersama talenta terverifikasi.
-          </p>
+      {/* ── Main Headline (36px/700/lh:43.2px, max 850px on desktop) ── */}
+      <h1 className="w-full lg:max-w-[850px] text-[36px] font-bold leading-[43.2px] text-[#0F172A] m-0">
+        Talenta Mahasiswa Terverifikasi untuk Proyek Anda
+      </h1>
+
+      {/* ── Description (16px/400/lh:24px) ── */}
+      <p className="w-full text-base font-normal leading-6 text-[#475569] m-0">
+        Temukan kolaborator kampus. Ubah ide menjadi karya nyata bersama talenta terverifikasi.
+      </p>
+
+      {/* ── Search Form Field (label + input, gap 8px) ── */}
+      <div className="flex w-full flex-col gap-2">
+        <label
+          htmlFor="search-hero"
+          className="text-sm font-normal leading-[21px] text-[#0F172A]"
+        >
+          Cari proyek atau jasa
+        </label>
+
+        <div className="relative w-full">
+          <input
+            id="search-hero"
+            type="text"
+            placeholder="⌕  Kata kunci, keahlian, atau judul"
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            className="w-full h-[52px] px-[14px] py-[14px] rounded-[16px] bg-white border border-[#D8DDEC] text-sm text-[#0F172A] placeholder-[#475569] focus:outline-none focus:ring-2 focus:ring-[#4338CA]/20 focus:border-[#4338CA] transition-colors"
+          />
         </div>
+      </div>
 
-        {/* Interactive Search Bar */}
-        <div className="w-full max-w-[820px] space-y-2">
-          <div className="relative">
-            <label htmlFor="search-hero" className="sr-only">
-              Cari proyek atau jasa mahasiswa
-            </label>
-            <input
-              id="search-hero"
-              type="text"
-              placeholder="Cari kata kunci, keahlian, atau judul proyek..."
-              onChange={(e) => onSearchChange?.(e.target.value)}
-              className="glass-input w-full rounded-[var(--radius-md)] py-2.5 pl-9 pr-4 text-[0.688rem] shadow-sm"
-            />
-            <svg
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
+      {/* ── Catalog Switch (Temukan Proyek / Jasa Mahasiswa) ── */}
+      <div
+        className="flex w-full items-center gap-2"
+        role="group"
+        aria-label="Pilih Katalog"
+      >
+        <button
+          type="button"
+          aria-pressed={selectedCategory !== 'SERVICES'}
+          onClick={() => onCategorySelect?.('PROJECTS')}
+          className={`min-h-[44px] px-4 py-2.5 rounded-full text-xs font-semibold inline-flex items-center whitespace-nowrap transition-colors cursor-pointer ${
+            selectedCategory !== 'SERVICES'
+              ? 'bg-[#4338CA] text-white shadow-xs'
+              : 'bg-[#E8E7FC] text-[#4338CA] hover:bg-[#d8ddec]'
+          }`}
+        >
+          Temukan Proyek
+        </button>
 
-          {/* Quick Category Chips */}
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Kategori Populer">
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => onCategorySelect?.(cat)}
-                  aria-pressed={isSelected}
-                  className={`rounded-full px-2.5 py-1 text-[0.563rem] font-semibold transition-all duration-150 ${
-                    isSelected
-                      ? 'bg-[var(--color-primary)] text-white shadow-sm'
-                      : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-soft)]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <button
+          type="button"
+          aria-pressed={selectedCategory === 'SERVICES'}
+          onClick={() => onCategorySelect?.('SERVICES')}
+          className={`min-h-[44px] px-4 py-2.5 rounded-full text-xs font-semibold inline-flex items-center whitespace-nowrap transition-colors cursor-pointer ${
+            selectedCategory === 'SERVICES'
+              ? 'bg-[#4338CA] text-white shadow-xs'
+              : 'bg-[#E8E7FC] text-[#4338CA] hover:bg-[#d8ddec]'
+          }`}
+        >
+          Jasa Mahasiswa
+        </button>
+      </div>
 
+      {/* ── Category Chips (Single row on tablet, wraps on narrow screens) ── */}
+      <div
+        className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full"
+        role="group"
+        aria-label="Filter Kategori"
+      >
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => onCategorySelect?.(cat)}
+            className="min-h-[44px] px-4 py-2.5 rounded-full text-xs font-semibold bg-[#E8E7FC] text-[#4338CA] hover:bg-[#d8ddec] transition-colors inline-flex items-center whitespace-nowrap cursor-pointer"
+          >
+            {cat}
+          </button>
+        ))}
       </div>
     </section>
   );
