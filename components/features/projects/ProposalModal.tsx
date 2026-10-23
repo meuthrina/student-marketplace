@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Project } from '@/types';
 import { ProposalProjectSummary } from '@/components/features/projects/ProposalProjectSummary';
 import { ProposalBidForm } from '@/components/features/projects/ProposalBidForm';
@@ -42,8 +42,9 @@ export function ProposalModal({
   const [modalMode, setModalMode] = useState<'normal' | 'invalid'>('normal');
   const [rejectedFile, setRejectedFile] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (modalMode === 'invalid') {
+  const handleModeChange = (newMode: 'normal' | 'invalid') => {
+    setModalMode(newMode);
+    if (newMode === 'invalid') {
       onBidAmountChange('0');
       onDurationChange('5');
       onProposalChange('Halo');
@@ -53,7 +54,7 @@ export function ProposalModal({
       if (proposalText === 'Halo') onProposalChange('');
       setRejectedFile(null);
     }
-  }, [modalMode]);
+  };
 
   if (!isOpen) return null;
 
@@ -110,7 +111,7 @@ export function ProposalModal({
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => setModalMode('normal')}
+                onClick={() => handleModeChange('normal')}
                 className={`min-h-[38px] px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   modalMode === 'normal'
                     ? 'bg-[#4338CA] text-white shadow-xs'
@@ -121,7 +122,7 @@ export function ProposalModal({
               </button>
               <button
                 type="button"
-                onClick={() => setModalMode('invalid')}
+                onClick={() => handleModeChange('invalid')}
                 className={`min-h-[38px] px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   modalMode === 'invalid'
                     ? 'bg-[#B91C1C] text-white shadow-xs'

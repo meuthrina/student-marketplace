@@ -7,15 +7,21 @@ import { Badge } from '@/components/ui/Badge';
 
 /**
  * ProjectsPage (React Server Component)
- *
- * Menampilkan katalog proyek freelance yang terbuka untuk penawaran (bidding).
- * Menggunakan arsitektur RSC siap integrasi Prisma ORM (Tugas 2) dan Suspense untuk searchParams.
- */
+*
+* Menampilkan katalog proyek freelance yang terbuka untuk penawaran (bidding).
+* Menggunakan arsitektur RSC siap integrasi Prisma ORM (Tugas 2) dan Suspense untuk searchParams.
+*/
 interface ProjectsPageProps {
   searchParams?: Promise<{ scope?: string; cat?: string }>;
 }
 
 async function ProjectsCatalog({ searchParams }: ProjectsPageProps) {
+  // ⏳ Simulasi delay jaringan (2,5 detik) (LOADING.TSX)
+  await new Promise((resolve) => setTimeout(resolve, 2500)); // Jeda 2,5 detik
+  
+  // SIMULASI ERROR: Lempar di dalam fungsi saat runtime
+  // throw new Error("Simulasi error pengambilan katalog proyek");
+
   const resolvedParams = searchParams ? await searchParams : {};
   const currentScope = resolvedParams.scope?.toUpperCase() || 'ALL';
 

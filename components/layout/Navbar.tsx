@@ -32,13 +32,15 @@ function NavbarContent({
   const { activeRole, setActiveRole } = useRole();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isTabletMenuOpen, setIsTabletMenuOpen] = useState(false);
-  const [navSearchQuery, setNavSearchQuery] = useState(searchParams.get('q') ?? '');
+  const urlQ = searchParams.get('q') ?? '';
+  const [prevUrlQ, setPrevUrlQ] = useState(urlQ);
+  const [navSearchQuery, setNavSearchQuery] = useState(urlQ);
 
   // Sinkronkan input pencarian jika query string ?q berubah dari luar
-  useEffect(() => {
-    const q = searchParams.get('q') ?? '';
-    setNavSearchQuery(q);
-  }, [searchParams]);
+  if (prevUrlQ !== urlQ) {
+    setPrevUrlQ(urlQ);
+    setNavSearchQuery(urlQ);
+  }
 
   // Debounce otomatis saat mengetik di halaman Beranda (/)
   useEffect(() => {

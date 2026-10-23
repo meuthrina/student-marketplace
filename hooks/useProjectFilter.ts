@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { mockProjects, mockServices } from '@/lib/mockData';
 import { Project, ServiceOffering, ProjectScope } from '@/types';
@@ -71,7 +71,12 @@ export function useProjectFilter(options?: UseProjectFilterOptions): UseProjectF
   const [activeTab, setActiveTabState] = useState<CatalogTab>(initialTab);
 
   // Sync state lokal ketika searchParams di URL berubah dari luar (misal: browser Back/Forward atau Navbar)
-  useEffect(() => {
+  const currentParamsStr = searchParams.toString();
+  const [prevParamsStr, setPrevParamsStr] = useState<string>(currentParamsStr);
+
+  if (prevParamsStr !== currentParamsStr) {
+    setPrevParamsStr(currentParamsStr);
+
     const q = searchParams.get('q') ?? '';
     if (q !== searchQuery) {
       setSearchQueryState(q);
@@ -103,7 +108,7 @@ export function useProjectFilter(options?: UseProjectFilterOptions): UseProjectF
     if (tab !== activeTab) {
       setActiveTabState(tab);
     }
-  }, [searchParams]);
+  }
 
   // Ref untuk debounce URL update
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
