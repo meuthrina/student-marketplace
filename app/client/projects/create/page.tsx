@@ -203,7 +203,7 @@ export default function CreateProjectPage() {
                       <span className="text-xs font-bold text-[#4338CA]">
                         🎓 Khusus Universitas Pertamina
                       </span>
-                      <ScopeBadge scope="CAMPUS_SPECIFIC" targetCampus="Universitas Pertamina" size="sm" />
+                      <ScopeBadge scope="CAMPUS_SPECIFIC" targetCampus={targetCampus} size="sm" />
                     </div>
                     <p className="text-xs text-[#475569]">
                       Hanya mahasiswa aktif berstatus <strong>Verified Student</strong> dengan NIM resmi yang dapat mengajukan proposal.

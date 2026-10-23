@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { Role, User } from '@/types';
 import { mockCurrentUser } from '@/lib/mockData';
 
@@ -26,7 +26,6 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [isVerifiedStudent, setIsVerifiedStudent] = useState<boolean>(
     mockCurrentUser.isVerifiedStudent
   );
-  const [currentUser, setCurrentUser] = useState<User>(mockCurrentUser);
 
   const setActiveRole = (role: Role) => {
     setActiveRoleState(role);
@@ -36,13 +35,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     setActiveRoleState((prev) => (prev === 'STUDENT' ? 'CLIENT' : 'STUDENT'));
   };
 
-  useEffect(() => {
-    setCurrentUser((prev) => ({
-      ...prev,
-      activeRole,
-      isVerifiedStudent,
-    }));
-  }, [activeRole, isVerifiedStudent]);
+  const currentUser: User = useMemo(() => ({
+    ...mockCurrentUser,
+    activeRole,
+    isVerifiedStudent,
+  }), [activeRole, isVerifiedStudent]);
 
   return (
     <RoleContext.Provider

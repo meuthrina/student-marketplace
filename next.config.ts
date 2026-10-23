@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: '/tentang',
+        destination: '/about',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
