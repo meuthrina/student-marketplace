@@ -56,6 +56,9 @@ export interface Project {
   skillTags: string[];
   status: ProjectStatus;
   createdAt: string;
+  isCampusOnly?: boolean;
+  skills?: string[];
+  bidsCount?: number;
 }
 
 /**
