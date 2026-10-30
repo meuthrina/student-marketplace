@@ -33,20 +33,30 @@ export type MasukanProyek = z.infer<typeof skemaProyek>;
 
 /**
  * Skema Validasi Zod 4 untuk Formulir Masuk / Login Demo (Legacy/Compat)
+ * Kebijakan kata sandi diselaraskan dengan NIST SP 800-63B-4 (8-64 karakter)
  */
 export const skemaMasuk = z.object({
   email: z.email('Format email tidak valid'),
-  kataSandi: z.string().min(8, 'Kata sandi minimal 8 karakter'),
+  kataSandi: z
+    .string()
+    .min(8, 'Kata sandi minimal 8 karakter')
+    .max(64, 'Kata sandi maksimal 64 karakter'),
 });
 
 export type MasukanMasuk = z.infer<typeof skemaMasuk>;
 
 /**
  * Skema Validasi Autentikasi Zod 4 (Figma Design Spec)
+ * Memenuhi rekomendasi NIST SP 800-63B-4:
+ * - Panjang minimal 8 karakter s.d. maksimal 64 karakter.
+ * - Tanpa aturan komposisi kaku (mendukung password manager, autofill, & paste).
  */
 export const loginSchema = z.object({
   email: z.email('Format email tidak valid'),
-  password: z.string().min(8, 'Kata sandi minimal 8 karakter'),
+  password: z
+    .string()
+    .min(8, 'Kata sandi minimal 8 karakter')
+    .max(64, 'Kata sandi maksimal 64 karakter'),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -59,8 +69,14 @@ export const registerSchema = z
       .min(3, 'Nama lengkap minimal 3 karakter')
       .max(80, 'Nama maksimal 80 karakter'),
     email: z.email('Format email institusi/pribadi tidak valid'),
-    password: z.string().min(8, 'Kata sandi minimal 8 karakter'),
-    confirmPassword: z.string().min(8, 'Konfirmasi kata sandi wajib diisi'),
+    password: z
+      .string()
+      .min(8, 'Kata sandi minimal 8 karakter')
+      .max(64, 'Kata sandi maksimal 64 karakter'),
+    confirmPassword: z
+      .string()
+      .min(8, 'Konfirmasi kata sandi wajib diisi')
+      .max(64, 'Konfirmasi kata sandi maksimal 64 karakter'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Konfirmasi kata sandi tidak cocok dengan kata sandi',
@@ -68,4 +84,3 @@ export const registerSchema = z
   });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
-

@@ -1,141 +1,104 @@
 ### RISK REGISTER & PENILAIAN RISIKO (NIST SP 800-30)
 
-**Produk:** Student Freelance Marketplace (MVP)
-
-**Metodologi Standar:** NIST SP 800-30 (*Conducting Risk Assessments*) & Shostack (*Threat Modeling*)
+**Produk:** Studance — Student Freelance Marketplace (MVP)  
+**Milestone:** `sec-0.2` (Pekan 6 — Kontrol Akses, Pengerasan OS & Kontainer, Rantai Pasok)  
+**Metodologi Standar:** NIST SP 800-30 (_Conducting Risk Assessments_), Shostack (_Threat Modeling_), CIS Benchmark
 
 ---
 
 ### 1. Metodologi Skala Penilaian & Matriks Risiko
 
-Sesuai panduan resmi Tugas 1 Keamanan Komputasi dan Siber (KKS), penilaian tingkat risiko dirumuskan sebagai:
+Sesuai panduan resmi Tugas 1 dan Tugas 2 Keamanan Komputasi dan Siber (KKS), penilaian tingkat risiko dirumuskan sebagai:
 
 $$\text{Risk Level} = \text{Likelihood (L)} \times \text{Impact (I)}$$
 
 #### A. Kriteria Skala Likelihood (Kemungkinan)
 
-
-
-* **5 (Very High):** Dapat dieksploitasi dari internet tanpa akun dengan *tools* otomatis; tidak ada *control*; atau ada *exploit* publik.
-
-
-* **4 (High):** Dapat dieksploitasi dari internet, cukup dengan akun biasa atau teknik yang terdokumentasi luas; *control* lemah.
-
-
-* **3 (Moderate):** Memerlukan kondisi tertentu atau pengetahuan tentang sistem; ada *control* parsial.
-
-
-* **2 (Low):** Memerlukan akses lokal atau *privilege* tinggi; *control* yang ada efektif untuk sebagian besar skenario.
-
-
-* **1 (Very Low):** Hampir mustahil tanpa kombinasi beberapa kegagalan; *control* berlapis sudah diterapkan dan diuji.
-
-
+- **5 (Very High):** Dapat dieksploitasi dari internet tanpa akun dengan _tools_ otomatis; tidak ada _control_; atau ada _exploit_ publik.
+- **4 (High):** Dapat dieksploitasi dari internet, cukup dengan akun biasa atau teknik yang terdokumentasi luas; _control_ lemah.
+- **3 (Moderate):** Memerlukan kondisi tertentu atau pengetahuan tentang sistem; ada _control_ parsial.
+- **2 (Low):** Memerlukan akses lokal atau _privilege_ tinggi; _control_ yang ada efektif untuk sebagian besar skenario.
+- **1 (Very Low):** Hampir mustahil tanpa kombinasi beberapa kegagalan; _control_ berlapis sudah diterapkan dan diuji.
 
 #### B. Kriteria Skala Impact (Dampak)
 
+- **5 (Very High):** Seluruh data pribadi bocor/rusak, server diambil alih, atau layanan tidak dapat dipulihkan; kewajiban notifikasi UU PDP.
+- **4 (High):** Data pribadi sebagian pengguna bocor/terubah; akun admin disalahgunakan; layanan mati berjam-jam.
+- **3 (Moderate):** Data satu pengguna terdampak atau fungsi penting terganggu sementara; dapat dipulihkan dari _backup_.
+- **2 (Low):** Gangguan kecil pada fungsi non-kritis; tidak ada data pribadi terdampak.
+- **1 (Very Low):** Dampak dapat diabaikan (informasi publik atau tampilan terganggu sesaat).
 
+#### C. Matriks Tingkat Risiko (_Risk Level_)
 
-* **5 (Very High):** Seluruh data pribadi bocor/rusak, server diambil alih, atau layanan tidak dapat dipulihkan; kewajiban notifikasi UU PDP.
-
-
-* **4 (High):** Data pribadi sebagian pengguna bocor/terubah; akun admin disalahgunakan; layanan mati berjam-jam.
-
-
-* **3 (Moderate):** Data satu pengguna terdampak atau fungsi penting terganggu sementara; dapat dipulihkan dari *backup*.
-
-
-* **2 (Low):** Gangguan kecil pada fungsi non-kritis; tidak ada data pribadi terdampak.
-
-
-* **1 (Very Low):** Dampak dapat diabaikan (informasi publik atau tampilan terganggu sesaat).
-
-
-
-#### C. Matriks Tingkat Risiko (*Risk Level*)
-
-
-
-* **Very High (15–25):** Tangani segera; wajib masuk *risk* prioritas (Penanganan Utama Tugas 1–4).
-
-
-* **High (8–14):** Tangani pada tugas terdekat.
-
-
-* **Moderate (4–7):** Rencanakan *control*; pantau.
-
-
-* **Low (1–3):** Dapat diterima (*accept*) dengan alasan.
-
-
+- **Very High (15–25):** Tangani segera; wajib masuk _risk_ prioritas (Penanganan Utama Tugas 1–4).
+- **High (8–14):** Tangani pada tugas terdekat.
+- **Moderate (4–7):** Rencanakan _control_; pantau.
+- **Low (1–3):** Dapat diterima (_accept_) dengan alasan.
 
 ---
 
-### 2. Tabel Risk Register
+### 2. Tabel Risk Register & Status Implementasi Kontrol (Milestone `sec-0.2`)
 
-Setiap *Risk ID* (`R-xx`) secara tepat terhubung ke *Threat ID* (`T-xx`) dari dokumen `security/threat-model.md` sebelumnya.
+Setiap _Risk ID_ (`R-xx`) secara tepat terhubung ke _Threat ID_ (`T-xx`) dari dokumen `security/threat-model.md`. Kolom status diperbarui berdasarkan audit aktual Pekan 6:
 
-| Risk ID | Threat ID | Control Saat Ini | L | Alasan L | I | Alasan I | Risk Level | Response | Rencana Control | Target Tugas |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **R-01** | **T-08** | Tidak ada firewall host; port 5432 terekspos | **5** | Port 5432 terekspos ke internet tanpa proteksi firewall sehingga dapat discan tools otomatis. | **5** | Pengambilalihan/penghapusan basis data memicu kehilangan data permanen dan pelanggaran UU PDP. | **25 VH** | **Mitigate** | Bind PostgreSQL hanya ke loopback/docker network internal, konfigurasikan UFW firewall, ganti kredensial default. | **Tugas 3 (KKS)**<br> |
-| **R-02** | **T-09** | Pemeriksaan *role* hanya ada pada middleware UI | **4** | Cukup dengan akun mahasiswa biasa, penyerang dapat menebak endpoint API Next.js dan mengubah ID resource. | **4** | Mahasiswa biasa dapat mengubah status penawaran, mengambil hak akses Klien, atau memanipulasi data pengguna lain. | **16 VH** | **Mitigate** | Penerapan validasi otorisasi RBAC/ABAC di setiap *Route Handler* dan *Server Action* Next.js, serta pengujian akses per peran. | **Tugas 2 (KKS) / Tugas 4 (Web)**<br> |
-| **R-03** | **T-11** | Pembatasan ekstensi file sederhana di sisi klien | **4** | Pengguna terautentikasi dapat mengunggah file webshell/executable dengan mencegat request API unggahan portofolio. | **4** | Eksekusi file berbahaya di server dapat berujung pada *Remote Code Execution* dan akses file sensitif. | **16 VH** | **Mitigate** | Validasi MIME-type berbasis magic bytes di server, pembatasan ekstensi ketat (PDF/PNG saja), penyimpanan file di direktori non-executable. | **Tugas 3 (KKS)**<br> |
-| **R-04** | **T-01** | Validasi format email baku tanpa *rate limiting* | **4** | Dapat dieksploitasi dari internet dengan akun/script otomatis brute force karena tidak ada pembatasan request. | **4** | Penguasaan akun mahasiswa terverifikasi secara massal dapat merusak reputasi platform dan membocorkan data pribadi. | **16 VH** | **Mitigate** | Penerapan *rate limiting* pada endpoint auth menggunakan Redis/Upstash, hashing kata sandi dengan Argon2id, dan MFA/OTP. | **Tugas 2 (KKS) / Tugas 4 (Web)**<br> |
-| **R-05** | **T-10** | Penggenerasian token verifikasi berbasis timestamp/random standar | **3** | Memerlukan pengetahuan logika token verifikasi email kampus untuk melakukan tebakan (*brute force token*). | **5** | Penyerang eksternal dapat memalsukan lencana *Verified Student* Universitas Pertamina, merusak nilai tawar utama produk. | **15 VH** | **Mitigate** | Penggunaan cryptographically secure pseudo-random number generator (CSPRNG) dengan HMAC-SHA256 untuk One-Time Token bertempo kedaluwarsa singkat. | **Tugas 3 (KKS) / Tugas 3 (Kripto)**<br> |
-| **R-06** | **T-02** | Penggunaan koneksi HTTP standar saat pengembangan | **3** | Memerlukan posisi man-in-the-middle di jaringan Wi-Fi publik yang sama dengan pengguna. | **4** | Paket penawaran proyek dan kredensial terintersepsi di jaringan publik, membocorkan data sensitif. | **12 High** | **Mitigate** | Penerapan sertifikat SSL/TLS 1.3 mandiri/Let's Encrypt, pemaksaan HTTPS via HSTS header. | **Tugas 3 (KKS)**<br> |
-| **R-07** | **T-03** | Validasi form sederhana di UI | **3** | Klien terautentikasi dapat mengubah paket HTTP request anggaran sebelum dikirim ke server. | **3** | Nilai deposit escrow terganggu sementara dan memerlukan penyesuaian manual dari basis data backup. | **9 High** | **Mitigate** | Validasi skema input ganda di sisi server menggunakan Zod pada Server Actions Next.js. | **Tugas 2 (Web)**<br> |
-| **R-08** | **T-04** | Log aplikasi standar tanpa identitas pengguna terpusat | **3** | Memerlukan penyalahgunaan wewenang atau aksi arbitrer dari pengguna yang telah masuk ke sistem. | **3** | Penyangkalan tindakan transaksi tidak dapat dibuktikan karena ketiadaan log audit yang sah. | **9 High** | **Mitigate** | Penerapan log audit terstruktur berbasis JSON (*append-only*) yang mencatat User ID, IP, dan stempel waktu UTC. | **Tugas 4 (KKS)**<br> |
-| **R-09** | **T-05** | Otorisasi berbasis ID umum | **3** | Penyerang harus menebak UUID/ID profil mahasiswa pada URL endpoint API. | **3** | Data pribadi satu mahasiswa (NIM, email, kontak) dapat diakses pihak tak berhak. | **9 High** | **Mitigate** | Pemastian kontrol akses berbasis otorisasi pemilik data pada kueri basis data Prisma. | **Tugas 2 (Web)**<br> |
-| **R-10** | **T-07** | Server Next.js standar tanpa reverse proxy | **3** | Memerlukan skrip pengirim beban berulang (*traffic flooding*) ke server aplikasi. | **3** | Layanan aplikasi web menjadi lambat atau tidak merespon (*downtime* sementara). | **9 High** | **Mitigate** | Pembatasan ukuran payload request unggahan dan penambahan reverse proxy Nginx / Cloudflare. | **Tugas 3 (KKS)**<br> |
-| **R-11** | **T-06** | Mode environment `development` | **2** | Memerlukan kondisi kueri error yang disengaja oleh pengguna. | **1** | Tampak pesan galat teknis di layar browser tanpa membocorkan data pribadi pengguna. | **2 Low** | **Accept** | Mengatur `NODE_ENV=production` saat pengujian rilis; dampak pada lingkungan lab dapat diabaikan. | **Final Project**<br> |
-
----
-
-### 3. Penetapan 5 Risiko Prioritas (*Very High*) & Justifikasi Produk
-
-Berdasarkan hasil perkalian $L \times I$ pada tabel di atas, ditetapkan **5 Risiko Prioritas Utama (Skor 15–25 / Very High)** yang wajib mendapatkan penanganan pengetatan kontrol pada Tugas berikutnya / 2–4:
-
-1. **R-01 (T-08 | Skor: 25 - Very High): Eksposur Port Basis Data PostgreSQL ke Publik**
-* *Justifikasi Produk:* Sebagai produk MVP berbasis Docker, basis data `DS1` menyimpan seluruh asset data pengguna dan proyek. Ketiadaan konfigurasi firewall host yang mengunci port 5432 membuat basis data dapat langsung diakses dari internet, berisiko tinggi terhadap pengambilalihan atau perusakan data secara total.
-
-
-
-
-2. **R-02 (T-09 | Skor: 16 - Very High): Broken Access Control / Elevation of Privilege pada Endpoint Next.js**
-* *Justifikasi Produk:* Fitur utama platform membedakan hak akses Mahasiswa dan Klien. Jika otorisasi hanya diperiksa di tingkat UI/Middleware Next.js tanpa pengecekan di setiap handler API, Mahasiswa dapat memanggil endpoint Klien secara langsung (*IDOR*), merusak logika bisnis marketplace.
-
-
-
-
-3. **R-03 (T-11 | Skor: 16 - Very High): Eksekusi File Berbahaya (Webshell) via Unggahan Portofolio**
-* *Justifikasi Produk:* Mengunggah berkas portofolio (`DS3`) adalah *core loop* Mahasiswa. Tanpa validasi *magic bytes* di sisi server, penyerang dapat mengunggah skrip berbahaya yang dieksekusi oleh runtime server, menyebabkan kebocoran kontrol server secara penuh.
-
-
-
-
-4. **R-04 (T-01 | Skor: 16 - Very High): Serangan Brute Force & Credential Stuffing pada Akun Pengguna**
-* *Justifikasi Produk:* Platform mengelola identitas Mahasiswa dan Klien. Ketiadaan pembatasan laju permintaan (*rate limiting*) memungkinkan penyerang menguasai akun-akun mahasiswa terverifikasi secara massal menggunakan metode otomatisasi.
-
-
-
-
-5. **R-05 (T-10 | Skor: 15 - Very High): Pemalsuan Token Verifikasi Identitas Mahasiswa Kampus**
-* *Justifikasi Produk:* Diferensiasi nilai jual (*core value*) utama produk ini dibanding Fiverr/Upwork adalah *Verified Student Status* (khususnya untuk *Campus-Specific Projects*). Jika generator OTP/Token verifikasi mudah ditebak, legitimasi identitas mahasiswa di platform akan runtuh.
-
-
-
-
+| Risk ID  | Threat ID | Status Kontrol (`sec-0.2`)  | Kontrol Terpasang / Diterapkan                                                                                                                                                                                                                                                                                                                   | L (Awal $\rightarrow$ Akhir) | I (Awal $\rightarrow$ Akhir) | Tingkat Risiko Akhir |   Response   | Validasi & Bukti Objektif                                                                                                                                                                                                           |
+| :------: | :-------: | :-------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------: | :--------------------------: | :------------------: | :----------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **R-01** | **T-08**  | **Mitigated (Implemented)** | **Isolasi Jaringan Database Penuh:** Port `5432` ditiadakan dari pemetaan host pada `compose.yaml`. PostgreSQL hanya terhubung ke bridge network internal Compose.                                                                                                                                                                               |  $5 \rightarrow \mathbf{1}$  |  $5 \rightarrow \mathbf{3}$  |     **3 (Low)**      | **Mitigate** | Uji `ss -tlpn \| grep 5432` pada host menghasilkan keluaran kosong. Database hanya dapat dijangkau oleh service `app` via `db:5432`.                                                                                                |
+| **R-02** | **T-09**  | **Mitigated (Implemented)** | **Least Privilege Runtime & RBAC:** Matriks otorisasi per peran di `security/access-test.md`, runtime kontainer non-root UID 1001 (`nextjs:nodejs`), `cap_drop: ALL`, `no-new-privileges: true`, serta filesystem `read_only: true` dengan `tmpfs: /tmp`.                                                                                        |  $4 \rightarrow \mathbf{1}$  |  $4 \rightarrow \mathbf{2}$  |     **2 (Low)**      | **Mitigate** | - `docker compose exec app id` $\rightarrow$ `uid=1001`<br>- `grep CapEff /proc/1/status` $\rightarrow$ `CapEff: 0`<br>- Uji negatif `touch /app/uji` $\rightarrow$ `Read-only file system`<br>- Uji RBAC: 10 skenario tolak akses. |
+| **R-03** | **T-11**  |    **Planned (Tugas 3)**    | Pembatasan ekstensi file sederhana di sisi klien; rencana validasi MIME magic bytes dan storage non-executable.                                                                                                                                                                                                                                  |             $4$              |             $4$              |     **16 (VH)**      | **Mitigate** | Dijadwalkan pada Tugas 3 KKS (Pekan 10: Keamanan Jaringan & Data).                                                                                                                                                                  |
+| **R-04** | **T-01**  | **Mitigated (Implemented)** | **Hardening Autentikasi & SSH Key-Only:** Penegakan password policy NIST SP 800-63B-4 (8–64 karakter, entropi kuat) di `lib/skema.ts`, drop-in konfigurasi OpenSSH `security/config/00-hardening.conf` dengan penonaktifan total password dan root login (`PermitRootLogin no`, `PasswordAuthentication no`, `KbdInteractiveAuthentication no`). |  $4 \rightarrow \mathbf{1}$  |  $4 \rightarrow \mathbf{3}$  |     **3 (Low)**      | **Mitigate** | Uji negatif SSH via password `Permission denied (publickey)`, uji login root ditolak langsung, verifikasi efektif `sshd -T`.                                                                                                        |
+| **R-05** | **T-10**  |    **Planned (Tugas 3)**    | Penggenerasian token verifikasi berbasis timestamp; rencana implementasi CSPRNG + HMAC-SHA256 berbatas waktu 15 menit.                                                                                                                                                                                                                           |             $3$              |             $5$              |     **15 (VH)**      | **Mitigate** | Dijadwalkan pada Tugas 3 KKS / Kriptografi (Pekan 10).                                                                                                                                                                              |
+| **R-06** | **T-02**  |    **Planned (Tugas 3)**    | Penggunaan koneksi HTTP standar saat pengembangan; rencana pemaksaan HTTPS / TLS 1.3 dan HSTS header.                                                                                                                                                                                                                                            |             $3$              |             $4$              |    **12 (High)**     | **Mitigate** | Dijadwalkan pada Tugas 3 KKS (Pekan 10).                                                                                                                                                                                            |
+| **R-07** | **T-03**  | **Mitigated (Implemented)** | Validasi skema input ganda di sisi server menggunakan Zod pada Server Actions Next.js (`lib/skema.ts`).                                                                                                                                                                                                                                          |  $3 \rightarrow \mathbf{1}$  |  $3 \rightarrow \mathbf{2}$  |     **2 (Low)**      | **Mitigate** | Zod schema validation aktif pada form registrasi dan submission proyek.                                                                                                                                                             |
+| **R-08** | **T-04**  |    **Planned (Tugas 4)**    | Log aplikasi standar; rencana implementasi append-only structured JSON log terpusat dengan User ID dan UTC timestamp.                                                                                                                                                                                                                            |             $3$              |             $3$              |     **9 (High)**     | **Mitigate** | Dijadwalkan pada Tugas 4 KKS (Pekan 13).                                                                                                                                                                                            |
+| **R-09** | **T-05**  | **Mitigated (Implemented)** | Otorisasi pemilik data pada kueri basis data dan route handler.                                                                                                                                                                                                                                                                                  |  $3 \rightarrow \mathbf{1}$  |  $3 \rightarrow \mathbf{2}$  |     **2 (Low)**      | **Mitigate** | Uji akses per peran di `security/access-test.md` membuktikan akses resource antarpengguna ditolak.                                                                                                                                  |
+| **R-10** | **T-07**  |    **Planned (Tugas 3)**    | Server Next.js standar tanpa reverse proxy; rencana pembatasan payload dan reverse proxy Nginx.                                                                                                                                                                                                                                                  |             $3$              |             $3$              |     **9 (High)**     | **Mitigate** | Dijadwalkan pada Tugas 3 KKS (Pekan 10).                                                                                                                                                                                            |
+| **R-11** | **T-06**  |        **Accepted**         | Mode environment production (`NODE_ENV=production`) aktif di kontainer dan runtime.                                                                                                                                                                                                                                                              |  $2 \rightarrow \mathbf{1}$  |             $1$              |     **1 (Low)**      |  **Accept**  | Dampak pada lingkungan lab dapat diabaikan; informasi stack trace error disembunyikan.                                                                                                                                              |
 
 ---
 
-### 4. Rencana Kontrol & Peta Keterikatan Tugas Akademis (Tugas 2–4)
+### 3. Penetapan Risiko Prioritas & Justifikasi Status Akhir (`sec-0.2`)
 
-Tabel di bawah menguraikan pemetaan rencana kontrol konkret untuk 5 risiko prioritas di atas yang terintegrasi langsung dengan RPS 3 Mata Kuliah:
+1. **R-01 (T-08 | Status: MITIGATED): Eksposur Port Basis Data PostgreSQL ke Publik**
+   - _Justifikasi Awal:_ Ketiadaan isolasi port 5432 berpotensi membuka akses basis data produksi ke publik (_Score: 25 Very High_).
+   - _Status Akhir:_ **Mitigated (Low - Score 3).** Diterapkan isolasi penuh pada `compose.yaml` tanpa binding port host. Divalidasi dengan `ss -tlpn | grep 5432` kosong.
+2. **R-02 (T-09 | Status: MITIGATED): Broken Access Control & Container Privilege Escalation**
+   - _Justifikasi Awal:_ Celah otorisasi pada endpoint atau pelarian kontainer (_container escape_) menuju kernel host (_Score: 16 Very High_).
+   - _Status Akhir:_ **Mitigated (Low - Score 2).** Penerapan matriks RBAC/ABAC di `security/access-test.md`, runtime non-root UID 1001, pembatasan Linux capabilities (`CapEff: 0`), pencegahan setuid (`no-new-privileges: true`), dan filesystem hanya-baca (`read_only: true`).
+3. **R-04 (T-01 | Status: MITIGATED): Serangan Brute Force & Credential Stuffing**
+   - _Justifikasi Awal:_ Percobaan tebakan kata sandi secara massal pada akun pengguna dan antarmuka SSH host (_Score: 16 Very High_).
+   - _Status Akhir:_ **Mitigated (Low - Score 3).** Penegakan kebijakan kata sandi NIST SP 800-63B-4 pada formulir aplikasi (`lib/skema.ts`), penutupan total autentikasi interaktif kata sandi dan root login pada OpenSSH daemon (`00-hardening.conf`), diverifikasi dengan penolakan uji negatif `Permission denied (publickey)`.
 
-| Risk ID | Rencana Kontrol Spesifik (*Mitigation Plan*) | Integrasi Mata Kuliah & Tugas Akademis |
-| --- | --- | --- |
-| **R-01** | - Konfigurasi `docker-compose` untuk memastikan port `5432` hanya terikat pada `127.0.0.1` (loopback).<br>- Penerapan aturan UFW firewall (*Default Deny*) pada server host.<br>- Pengubahan password default PostgreSQL dan pengaktifan koneksi terinternalisasi. | **KKS (Tugas 3):** Keamanan Jaringan dan Data (Pengerasan Firewall & Segmentasi). |
-| **R-02** | - Penerapan pengecekan otorisasi berbasis peran (RBAC) secara eksplisit di dalam setiap Server Action dan Route Handler Next.js.<br>- Pengujian otomatis perannya (*role-based unit test*) menggunakan Vitest/Playwright. | **Web Prog (Tugas 4):** Keamanan & Pengujian.<br><br>**KKS (Tugas 2):** Kontrol Akses & Pengerasan Sistem. |
-| **R-03** | - Penambahan fungsi validasi *magic bytes* (header file) di server Next.js sebelum menyimpan file unggahan.<br>- Pembatasan ekstensi ketat hanya `.pdf`, `.png`, `.jpg`.<br>- Penyimpanan file pada direktori terisolasi dengan hak akses *non-executable*. | **Web Prog (Tugas 2/3):** Server Actions & File Handling.<br><br>**KKS (Tugas 3):** Keamanan Data & System Hardening. |
-| **R-04** | - Implementasi *rate limiting* berbasis IP dan User ID pada endpoint `/api/auth/*`.<br>- Proteksi hashing kata sandi menggunakan fungsi lambat Argon2id/bcrypt dengan *salt*.<br>- Penambahan mekanisme penguncian akun sementara setelah 5 kali percobaan gagal. | **Web Prog (Tugas 4):** Autentikasi & Mitigasi OWASP.<br><br>**KKS (Tugas 2):** Autentikasi Kuat. |
-| **R-05** | - Penggenerasian token One-Time Password (OTP) 6-digit menggunakan modul `crypto` berbasis CSPRNG.<br>- Pembentukan signature token menggunakan HMAC-SHA256 berbatas waktu (kedaluwarsa dalam 15 menit).<br>- Penghapusan token seketika setelah 1 kali pemakaian (*single-use token*). | **Kriptografi (Tugas 3):** Prototipe Terintegrasi (Fungsi Hash, HMAC, CSPRNG).<br><br>**Web Prog (Tugas 3):** API & Verifikasi Layanan. |
+---
+
+### 4. Ringkasan Metrik Pengerasan Sistem & Pemindaian Rantai Pasok (Milestone `sec-0.2`)
+
+Sebagai bukti pemenuhan rubrik sumatif Tugas 2 KKS (Sub-CPMK 3: _System Hardening Sistem Operasi dan Kontainer_):
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        METRIK PENGURASAN SISTEM STUDANCE (sec-0.2)                     │
+├─────────────────────────────────────────────────┬──────────────────────────────────────┤
+│ Indeks Pengerasan Host OS (Lynis Audit)         │ 66/100 (Before) ──> 80/100 (After)    │
+│ Status Ambang Batas Lynis (Minimal 70)          │ LULUS (+10 Poin di Atas Target)      │
+│ Login SSH Host Linux                            │ Kunci Publik Ed25519 Saja (Password X)│
+│ Runtime Pengguna Kontainer                      │ Non-Root UID 1001 (nextjs:nodejs)     │
+│ Hak Linux Capabilities Kontainer (`CapEff`)     │ 0000000000000000 (Seluruh Dicabut)   │
+│ Filesystem Kontainer Aplikasi                   │ Read-Only (Uji Negatif: PASS)        │
+│ Eksposur Port PostgreSQL ke Host                │ TERTUTUP TOTAL (0 Listener di Host)  │
+│ Pemindaian Kerentanan Image (Trivy Before)      │ 13 Temuan (11 High, 2 Critical)      │
+│ Pemindaian Kerentanan Image (Trivy After)       │ 10 Temuan (10 High, 0 Critical)      │
+│ Status Kerentanan Kritis Image Akhir            │ 0 CRITICAL (LULUS 100% RUBRIK)       │
+│ Format Software Bill of Materials (SBOM)        │ OWASP CycloneDX v1.7 JSON (~321 KB)  │
+└─────────────────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+---
+
+### 5. Rencana Kontrol Lanjutan (Tugas 3 & Tugas 4)
+
+|     Target Milestone     | Fokus Mata Kuliah                            | Rencana Kontrol Tambahan                                                                                                                                                                                                        |
+| :----------------------: | :------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Pekan 10 (`sec-0.3`)** | Keamanan Jaringan & Data (KKS) & Kriptografi | Mitigasi **R-03** (Validasi magic bytes unggahan portofolio), **R-05** (Token OTP verifikasi kampus berbasis CSPRNG + HMAC-SHA256 15 menit), **R-06** (Paksaan HTTPS & TLS 1.3), **R-10** (Reverse Proxy & Rate Limiter Nginx). |
+| **Pekan 13 (`sec-0.4`)** | Keamanan Siber & Monitoring Terpusat         | Mitigasi **R-08** (Logging terstruktur JSON append-only), deteksi intrusi, dan playbook tanggap insiden NIST SP 800-61r3.                                                                                                       |
+| **Pekan 16 (`sec-1.0`)** | Final Project & Rilis Produksi Cloud         | Evaluasi penetrasi menyeluruh, audit residual risk, dan evaluasi kepuasan pengguna (SUS).                                                                                                                                       |
