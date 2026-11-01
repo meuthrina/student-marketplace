@@ -16,18 +16,20 @@ import { ProjectActionCard } from '@/components/features/projects/ProjectActionC
 export interface ProjectDetailClientProps {
   project: Project;
   currentUser?: User;
+  initialBids?: Bid[];
 }
 
 export function ProjectDetailClient({
   project,
   currentUser = mockCurrentUser,
+  initialBids,
 }: ProjectDetailClientProps) {
   const searchParams = useSearchParams();
   const { activeRole } = useRole();
 
   // Local state for incoming bids (Aliran DFD F4)
-  const [projectBids, setProjectBids] = useState<Bid[]>(() =>
-    mockBids.filter((b) => b.projectId === project.id)
+  const [projectBids, setProjectBids] = useState<Bid[]>(
+    () => initialBids ?? mockBids.filter((b) => b.projectId === project.id)
   );
 
   // Declarative Modal Management using useModal (with WCAG AA Focus Return)

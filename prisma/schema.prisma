@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  title        String
+  category     String
+  description  String
+  budget       Int
+  deadline     DateTime
+  isCampusOnly Boolean  @default(false)
+  campusName   String?
+  skills       String?
+  status       String   @default("OPEN")
+  bidsCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bids         Bid[]
+
+  @@index([category])
+  @@index([status])
+}
+
+model Bid {
+  id           String   @id @default(cuid())
+  projectId    String
+  studentId    String
+  studentName  String
+  studentEmail String
+  campusName   String
+  bidAmount    Int
+  durationDays Int
+  message      String
+  portfolioUrl String?
+  status       String   @default("PENDING")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([studentId])
+}
+

@@ -1,40 +1,79 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { mockProjects } from '@/lib/mockData';
+import { connection } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma/client';
 import { ProjectCard } from '@/components/features/projects/ProjectCard';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/Badge';
+import type { Project, ProjectScope, ProjectStatus } from '@/types';
 
 /**
- * ProjectsPage (React Server Component)
-*
-* Menampilkan katalog proyek freelance yang terbuka untuk penawaran (bidding).
-* Menggunakan arsitektur RSC siap integrasi Prisma ORM (Tugas 2) dan Suspense untuk searchParams.
-*/
+ * ProjectsPage (React Server Component - Pekan 6 PAW)
+ *
+ * Menampilkan katalog proyek freelance secara persisten dari PostgreSQL via Prisma ORM 7.
+ * Mendukung pencarian teks (q), penyaringan kategori (category), dan filter cakupan kampus (scope / campusOnly).
+ */
 interface ProjectsPageProps {
-  searchParams?: Promise<{ scope?: string; cat?: string }>;
+  searchParams?: Promise<{ q?: string; category?: string; campusOnly?: string; scope?: string }>;
 }
 
 async function ProjectsCatalog({ searchParams }: ProjectsPageProps) {
-  // ⏳ Simulasi delay jaringan (2,5 detik) (LOADING.TSX)
-  await new Promise((resolve) => setTimeout(resolve, 2500)); // Jeda 2,5 detik
-  
-  // SIMULASI ERROR: Lempar di dalam fungsi saat runtime
-  // throw new Error("Simulasi error pengambilan katalog proyek");
-
+  await connection();
   const resolvedParams = searchParams ? await searchParams : {};
-  const currentScope = resolvedParams.scope?.toUpperCase() || 'ALL';
+  const currentScope = resolvedParams.scope?.toUpperCase() || (resolvedParams.campusOnly === 'true' ? 'UP' : 'ALL');
+  const q = resolvedParams.q?.trim();
+  const category = resolvedParams.category?.trim();
 
-  // Filter proyek berdasarkan parameter scope di URL
-  const projects = mockProjects.filter((project) => {
-    if (currentScope === 'UP') {
-      return project.scope === 'CAMPUS_SPECIFIC';
-    }
-    if (currentScope === 'PUBLIC') {
-      return project.scope === 'PUBLIC';
-    }
-    return true;
-  });
+  // Membangun klausa pencarian Prisma WhereInput
+  const whereClause: Prisma.ProjectWhereInput = {
+    status: 'OPEN',
+    ...(category && category !== 'Semua' ? { category } : {}),
+    ...(currentScope === 'UP' ? { isCampusOnly: true } : {}),
+    ...(currentScope === 'PUBLIC' ? { isCampusOnly: false } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: 'insensitive' } },
+            { description: { contains: q, mode: 'insensitive' } },
+            { skills: { contains: q, mode: 'insensitive' } },
+          ],
+        }
+      : {}),
+  };
+
+  type ProjectWithBids = Prisma.ProjectGetPayload<{ include: { bids: true } }>;
+  let dbProjects: ProjectWithBids[] = [];
+  try {
+    dbProjects = await prisma.project.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      include: { bids: true },
+    });
+  } catch (error) {
+    console.error('Gagal mengambil data proyek dari PostgreSQL:', error);
+    dbProjects = [];
+  }
+
+  const projects: Project[] = dbProjects.map((p) => ({
+    id: p.id,
+    title: p.title,
+    description: p.description,
+    category: p.category,
+    budget: p.budget,
+    deadline: p.deadline.toISOString(),
+    scope: (p.isCampusOnly ? 'CAMPUS_SPECIFIC' : 'PUBLIC') as ProjectScope,
+    targetCampus: p.campusName || undefined,
+    clientId: p.id,
+    clientName: p.isCampusOnly && p.campusName ? `${p.campusName} Lab/Faculty` : 'Klien Terverifikasi',
+    clientAvatar: '',
+    skillTags: p.skills ? p.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+    status: (p.status as ProjectStatus) || 'OPEN',
+    createdAt: p.createdAt.toISOString(),
+    isCampusOnly: p.isCampusOnly,
+    skills: p.skills ? p.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+    bidsCount: p.bidsCount || p.bids.length,
+  }));
 
   const scopeTabs = [
     { label: 'Semua Proyek', value: 'ALL', href: '/projects' },
@@ -87,7 +126,6 @@ export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
   return (
     <main className="w-full min-h-screen bg-[#F0F1FB] py-6 sm:py-8">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-8">
-        
         {/* Page Header */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -99,40 +137,21 @@ export default function ProjectsPage({ searchParams }: ProjectsPageProps) {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#0F172A]">
             Eksplorasi Proyek Freelance Mahasiswa
           </h1>
-          <p className="text-sm sm:text-base text-[#475569] max-w-2xl leading-relaxed">
-            Temukan kesempatan kolaborasi pengerjaan proyek dari internal kampus Universitas Pertamina maupun klien umum dengan perlindungan escrow dan kontrak transparan.
+          <p className="text-sm text-[#475569] max-w-2xl">
+            Temukan berbagai lowongan proyek terverifikasi dari civitas akademika dan klien terpercaya.
           </p>
         </div>
 
+        {/* Content with Suspense */}
         <Suspense
           fallback={
-            <div className="w-full p-8 text-center text-xs text-[#475569]">
-              Memuat katalog proyek...
+            <div className="w-full text-center py-16 text-sm text-[#78859D]">
+              Memuat katalog proyek dari database...
             </div>
           }
         >
           <ProjectsCatalog searchParams={searchParams} />
         </Suspense>
-
-        {/* Call-to-Action for Clients */}
-        <GlassCard className="w-full p-6 sm:p-8 rounded-[24px] flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/80">
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
-              Punya Kebutuhan Proyek? Pasang Lowongan Anda
-            </h2>
-            <p className="text-sm text-[#475569] max-w-xl">
-              Dapatkan proposal penawaran harga dan estimasi waktu terbaik dari mahasiswa terverifikasi Universitas Pertamina dalam hitungan jam.
-            </p>
-          </div>
-
-          <Link
-            href="/client/projects/create"
-            className="min-h-[48px] px-6 rounded-full bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-sm inline-flex items-center justify-center shrink-0 shadow-md transition-colors"
-          >
-            + Pasang Proyek Baru
-          </Link>
-        </GlassCard>
-
       </div>
     </main>
   );

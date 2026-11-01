@@ -1,284 +1,31 @@
-'use client';
+import React, { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { VerifyStudentWizard } from '@/components/features/auth/VerifyStudentWizard';
 
-import React, { useState, Suspense } from 'react';
-import Link from 'next/link';
-import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
-import { useRole } from '@/contexts/RoleContext';
-import {
-  requestVerificationToken,
-  verifyStudentTokenAction,
-} from '@/app/actions/verifyStudent';
+export const metadata: Metadata = {
+  title: 'Verifikasi Mahasiswa Kampus | Studance',
+  description:
+    'Validasi identitas akademik mahasiswa aktif Universitas Pertamina via email .ac.id dan token OTP berbatas waktu 15 menit.',
+};
 
-function VerifyStudentContent() {
-  const { currentUser, setIsVerifiedStudent } = useRole();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [email, setEmail] = useState(currentUser?.email || '');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [attemptsLeft, setAttemptsLeft] = useState(3);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [demoOtp, setDemoOtp] = useState<string>('');
-  const [tokenPreview, setTokenPreview] = useState<string>('');
-
-  // Helper handling OTP Input Focus Next Box
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  // Step 1: Request OTP Email Kampus Validation via Server Action
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!email.toLowerCase().endsWith('.ac.id')) {
-      setError(
-        'Email harus menggunakan domain kampus resmi berakhiran .ac.id (misal: @student.universitaspertamina.ac.id)'
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const studentId = currentUser.studentId || '105224029';
-      const result = await requestVerificationToken(email, studentId);
-      if (result.success) {
-        setDemoOtp(result.demoOtp || '');
-        setTokenPreview(result.tokenPreview || '');
-        setStep(2);
-      } else {
-        setError(result.message);
-      }
-    } catch {
-      setError('Terjadi kendala saat menghubungi server verifikasi. Silakan coba lagi.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Step 2: Verify 6-Digit OTP Token via Server Action (HMAC-SHA256 Cryptographic Check)
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    const fullOtp = otp.join('');
-
-    if (fullOtp.length < 6) {
-      setError('Masukkan 6-digit kode OTP lengkap.');
-      return;
-    }
-
-    if (attemptsLeft <= 1) {
-      setError('Batas percobaan habis. Silakan minta kode OTP baru.');
-      setAttemptsLeft(0);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const studentId = currentUser.studentId || '105224029';
-      const result = await verifyStudentTokenAction(
-        email,
-        studentId,
-        fullOtp
-      );
-
-      if (result.success) {
-        setIsVerifiedStudent(true);
-        setStep(3); // Verified Success
-      } else {
-        const remaining = attemptsLeft - 1;
-        setAttemptsLeft(remaining);
-        setError(`${result.message} Sisa percobaan: ${remaining} kali.`);
-      }
-    } catch {
-      setError('Gagal memverifikasi token di server. Silakan coba kembali.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+/**
+ * VerifyStudentPage (React Server Component)
+ *
+ * Halaman Server Component yang menyajikan wizard verifikasi email kampus dan OTP.
+ * Komponen interaktif didelegasikan ke Client Leaf Component `VerifyStudentWizard`.
+ */
+export default async function VerifyStudentPage() {
   return (
-    <div className="mx-auto max-w-xl px-4 py-12 space-y-8">
-      
-      {/* Header Info */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text-primary)]">
-          Verifikasi Identitas Mahasiswa
-        </h1>
-        <p className="text-xs sm:text-sm text-[var(--color-text-secondary)]">
-          Dapatkan lencana <span className="font-bold text-[var(--color-teal)]">Verified Student</span> untuk mengakses proyek eksklusif kampus.
-        </p>
-      </div>
-
-      <div className="glass-card p-6 sm:p-8 rounded-[var(--radius-xl)] space-y-6 shadow-xl border border-white/50">
-        
-        {/* Step Indicator */}
-        <div className="flex items-center justify-between text-xs font-bold border-b border-[var(--color-border)] pb-4">
-          <span className={step >= 1 ? 'text-[var(--color-primary)]' : 'text-gray-400'}>
-            1. Email Kampus
-          </span>
-          <span className="text-gray-300">•</span>
-          <span className={step >= 2 ? 'text-[var(--color-primary)]' : 'text-gray-400'}>
-            2. Token OTP
-          </span>
-          <span className="text-gray-300">•</span>
-          <span className={step === 3 ? 'text-[var(--color-teal)]' : 'text-gray-400'}>
-            3. Terverifikasi
-          </span>
-        </div>
-
-        {/* ERROR ALERT */}
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-[var(--radius-md)] text-xs font-semibold">
-            {error}
+    <main className="w-full min-h-screen bg-[#F0F1FB] py-6 sm:py-8">
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-xl py-16 text-center text-xs font-bold text-[var(--color-text-muted)]">
+            Memuat Halaman Verifikasi...
           </div>
-        )}
-
-        {/* STEP 1: FORM EMAIL KAMPUS */}
-        {step === 1 && (
-          <form onSubmit={handleRequestOtp} className="space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="campus-email" className="block text-xs font-bold text-[var(--color-text-primary)]">
-                Email Kampus Resmi (.ac.id) <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="campus-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@universitaspertamina.ac.id"
-                className="glass-input w-full px-3.5 py-2.5 text-xs rounded-[var(--radius-md)]"
-              />
-              <p className="text-xs text-[var(--color-text-muted)]">
-                Sistem akan memproses token OTP 6-digit terverifikasi ke email universitas Anda.
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs rounded-[var(--radius-pill)] transition-all shadow-md cursor-pointer disabled:opacity-50"
-            >
-              {isLoading ? 'Memproses Token Kriptografi...' : 'Kirim Kode OTP Verifikasi'}
-            </button>
-          </form>
-        )}
-
-        {/* STEP 2: FORM 6-DIGIT OTP TOKEN */}
-        {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Dev Preview Mode Notice (DFD F5/F6/F7 Verification Demo) */}
-            {demoOtp && (
-              <div className="p-3.5 bg-indigo-50/90 border border-indigo-200 text-indigo-900 rounded-[var(--radius-md)] text-xs space-y-1.5 shadow-xs">
-                <div className="flex items-center justify-between font-bold">
-                  <span className="flex items-center gap-1.5">
-                    <span aria-hidden="true">🔑</span>
-                    <span>Dev Preview (Token HMAC Server):</span>
-                  </span>
-                  <span className="font-mono bg-indigo-200/90 px-2.5 py-1 rounded text-indigo-950 font-bold tracking-widest text-sm shadow-2xs">
-                    {demoOtp}
-                  </span>
-                </div>
-                <p className="text-xs text-indigo-700 leading-relaxed">
-                  Token OTP 6-digit ini di-generate secara deterministik dari tanda tangan kriptografi HMAC-SHA256 institusi (HMAC Prefix: <code className="font-mono font-bold">{tokenPreview}</code>). Salin atau masukkan angka di atas untuk memvalidasi.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2 text-center">
-              <label className="block text-xs font-bold text-[var(--color-text-primary)]">
-                Masukkan 6-Digit Kode OTP
-              </label>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                Kode dikirim ke <span className="font-bold text-[var(--color-text-primary)]">{email}</span>
-              </p>
-
-              {/* 6 Digit Individual Input Boxes */}
-              <div className="flex justify-center gap-2 pt-2">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    id={`otp-input-${index}`}
-                    type="text"
-                    maxLength={1}
-                    aria-label={`Digit OTP ${index + 1}`}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    className="w-10 h-12 text-center font-extrabold text-lg glass-input rounded-[var(--radius-md)] focus:ring-2 focus:ring-[var(--color-primary)]"
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || attemptsLeft === 0}
-              className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs rounded-[var(--radius-pill)] transition-all shadow-md cursor-pointer disabled:bg-gray-300"
-            >
-              {isLoading ? 'Memvalidasi Tanda Tangan Kriptografis...' : 'Verifikasi OTP'}
-            </button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-xs text-[var(--color-text-muted)] underline hover:text-[var(--color-text-primary)]"
-              >
-                Ganti Email Kampus
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* STEP 3: SUCCESS VERIFIED STATE */}
-        {step === 3 && (
-          <div className="text-center space-y-4 py-4">
-            <div className="flex justify-center">
-              <VerifiedBadge size="md" campusDomain="universitaspertamina.ac.id" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-[var(--color-text-primary)]">
-                Selamat! Identitas Mahasiswa Terverifikasi
-              </h3>
-              <p className="text-xs text-[var(--color-text-secondary)]">
-                Akun Anda sekarang memiliki akses penuh untuk mengajukan proposal pada proyek eksklusif kampus.
-              </p>
-            </div>
-            <div className="pt-2">
-              <Link
-                href="/projects"
-                className="inline-block px-6 py-2.5 bg-brand-gradient text-white font-bold text-xs rounded-[var(--radius-pill)] shadow-md hover:opacity-90 transition-opacity"
-              >
-                Eksplorasi Proyek Kampus
-              </Link>
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-export default function VerifyStudentPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-xl py-16 text-center text-xs font-bold text-[var(--color-text-muted)]">
-          Memuat Halaman Verifikasi...
-        </div>
-      }
-    >
-      <VerifyStudentContent />
-    </Suspense>
+        }
+      >
+        <VerifyStudentWizard />
+      </Suspense>
+    </main>
   );
 }

@@ -1,33 +1,37 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { skemaProyek } from "@/lib/skema";
-import { bacaSesi } from "@/lib/sesi";
-import { judulProyekSudahAda, tambahProyek } from "@/lib/data";
-import type { StatusForm } from "@/lib/status-form";
-import type { Project } from "@/types";
+import { skemaProyek, formatZodErrors } from "@/lib/skema";
+import { bacaSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
+import type { FormActionState, StatusForm } from "@/types/form";
 
 /**
- * Server Action: Penerbitan Proyek Baru oleh Klien (Aliran DFD F3)
- * Menerapkan urutan deterministik 6 tahap:
- * 1. Sesi (Pemeriksaan sesi aktif atau fallback akun demo klien)
- * 2. Validasi Bentuk (Zod 4 safeParse & flattenError)
- * 3. Validasi Semantik (Pengecekan keunikan judul proyek)
- * 4. Mutasi Data (Menyimpan entitas baru ke data store)
- * 5. Revalidasi Cache (revalidatePath)
- * 6. Pengalihan Pengguna (redirect di luar blok try-catch)
+ * Server Action: Penerbitan Proyek Baru oleh Klien (Pekan 6 PAW)
+ * Menggunakan Prisma Client terhubung langsung ke basis data PostgreSQL.
+ *
+ * Urutan Eksekusi Deterministik:
+ * 1. Verifikasi Sesi Aktif (bacaSession)
+ * 2. Ekstraksi Masukan & Validasi Zod (skemaProyek.safeParse)
+ * 3. Persistensi ke PostgreSQL via Prisma Client (prisma.project.create)
+ * 4. Revalidasi Jalur Cache (revalidatePath)
+ * 5. Pengembalian Status Respon Terstruktur
  */
 export async function simpanProyek(
-  _sebelumnya: StatusForm,
+  _sebelumnya: FormActionState,
   formData: FormData
-): Promise<StatusForm> {
-  // 1. Sesi
-  const sesi = await bacaSesi();
-  const clientEmail = sesi?.email || "klien@pertamina.ac.id";
+): Promise<FormActionState> {
+  // 1. Verifikasi Sesi Aktif
+  const sesi = await bacaSession();
+  if (!sesi) {
+    return {
+      success: false,
+      pesan: "Silakan masuk terlebih dahulu untuk menerbitkan proyek.",
+    };
+  }
 
-  // 2. Validasi Bentuk
+  // 2. Ekstraksi & Normalisasi Masukan
   const mentah = Object.fromEntries(formData);
   const nilai: Record<string, string> = {};
   for (const [kunci, isi] of Object.entries(mentah)) {
@@ -36,43 +40,194 @@ export async function simpanProyek(
     }
   }
 
+  // Kompatibilitas field checkbox dan nama kampus default
+  if (mentah.eksklusifKampus && !mentah.isCampusOnly) {
+    mentah.isCampusOnly = mentah.eksklusifKampus;
+  }
+  if (!mentah.campusName && (mentah.isCampusOnly === "on" || mentah.isCampusOnly === "true")) {
+    mentah.campusName = sesi.campusName || "Universitas Pertamina";
+  }
+
   const hasil = skemaProyek.safeParse(mentah);
   if (!hasil.success) {
     return {
-      galat: z.flattenError(hasil.error).fieldErrors,
+      success: false,
+      galat: formatZodErrors(hasil.error),
       pesan: "Periksa kembali isian formulir proyek.",
       nilai,
     };
   }
 
-  // 3. Validasi Semantik
-  if (judulProyekSudahAda(hasil.data.judul, sesi?.email)) {
-    return {
-      galat: {
-        judul: [
-          "Judul proyek sudah pernah diterbitkan. Gunakan judul yang berbeda.",
-        ],
-      },
-      nilai,
-    };
-  }
-
-  // 4. Mutasi
-  let proyekBaru: Project;
+  // 3. Persistensi Data ke Basis Data PostgreSQL
   try {
-    proyekBaru = tambahProyek(hasil.data, clientEmail);
+    await prisma.project.create({
+      data: {
+        title: hasil.data.judul,
+        category: hasil.data.kategori,
+        description: hasil.data.deskripsi,
+        budget: hasil.data.anggaran,
+        deadline: new Date(hasil.data.tenggatWaktu),
+        isCampusOnly: hasil.data.isCampusOnly,
+        campusName: hasil.data.campusName || null,
+        skills: hasil.data.keahlian || null,
+        status: "OPEN",
+        bidsCount: 0,
+      },
+    });
   } catch (err) {
-    console.error("Gagal menambahkan proyek:", err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return {
+          success: false,
+          pesan: "Judul atau nilai unik proyek sudah terdaftar pada basis data.",
+          nilai,
+        };
+      }
+      if (err.code === "P2003") {
+        return {
+          success: false,
+          pesan: "Batasan integritas referensial data tidak terpenuhi.",
+          nilai,
+        };
+      }
+    }
+    console.error("Gagal menambahkan proyek ke database:", err);
     return {
+      success: false,
       pesan: "Gagal menyimpan proyek ke basis data.",
       nilai,
     };
   }
 
-  // 5. Revalidasi
+  // 4. Revalidasi Jalur Cache
   revalidatePath("/projects");
   revalidatePath("/client/dashboard");
 
-  // 6. Pengalihan (Redirect) - Wajib DI LUAR blok try-catch
-  redirect(`/projects/${proyekBaru.id}`);
+  // 5. Kembalikan Status Berhasil
+  return {
+    success: true,
+    pesan: "Proyek berhasil diterbitkan secara persisten!",
+  };
+}
+
+/**
+ * Server Action: Perubahan Status Proyek (Pekan 6 PAW)
+ * Mengubah status entitas proyek pada basis data PostgreSQL via prisma.project.update.
+ */
+export async function ubahStatusProyek(
+  id: string,
+  statusBaru: string
+): Promise<StatusForm> {
+  const sesi = await bacaSession();
+  if (!sesi) {
+    return {
+      success: false,
+      pesan: "Silakan masuk terlebih dahulu untuk mengubah status proyek.",
+    };
+  }
+
+  if (!id || typeof id !== "string") {
+    return {
+      success: false,
+      pesan: "ID proyek tidak valid.",
+    };
+  }
+
+  try {
+    await prisma.project.update({
+      where: { id },
+      data: { status: statusBaru },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return {
+          success: false,
+          pesan: "Proyek tidak ditemukan.",
+        };
+      }
+    }
+    console.error("Gagal mengubah status proyek:", err);
+    return {
+      success: false,
+      pesan: "Gagal memperbarui status proyek di basis data.",
+    };
+  }
+
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${id}`);
+
+  return {
+    success: true,
+    pesan: `Status proyek berhasil diubah menjadi ${statusBaru}.`,
+  };
+}
+
+/**
+ * Server Action: Penghapusan Proyek Berdasarkan ID (Pekan 6 PAW)
+ * Menegakkan batasan integritas referensial (onDelete: Restrict):
+ * Jika proyek telah memiliki penawaran mahasiswa, aksi hapus ditolak mutlak.
+ */
+export async function hapusProyek(id: string): Promise<StatusForm> {
+  const sesi = await bacaSession();
+  if (!sesi) {
+    return {
+      success: false,
+      pesan: "Silakan masuk terlebih dahulu untuk menghapus proyek.",
+    };
+  }
+
+  if (!id || typeof id !== "string") {
+    return {
+      success: false,
+      pesan: "ID proyek tidak valid.",
+    };
+  }
+
+  try {
+    // 1. Periksa apakah proyek memiliki penawaran terkait
+    const count = await prisma.bid.count({
+      where: { projectId: id },
+    });
+
+    if (count > 0) {
+      return {
+        success: false,
+        pesan:
+          "Proyek tidak dapat dihapus karena telah memiliki penawaran aktif dari mahasiswa (Integritas Terproteksi).",
+      };
+    }
+
+    // 2. Eksekusi penghapusan jika count === 0
+    await prisma.project.delete({
+      where: { id },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return {
+          success: false,
+          pesan: "Proyek tidak ditemukan.",
+        };
+      }
+      if (err.code === "P2003") {
+        return {
+          success: false,
+          pesan:
+            "Proyek tidak dapat dihapus karena batasan integritas referensial (onDelete: Restrict).",
+        };
+      }
+    }
+    console.error("Gagal menghapus proyek:", err);
+    return {
+      success: false,
+      pesan: "Gagal menghapus proyek dari basis data.",
+    };
+  }
+
+  revalidatePath("/projects");
+  return {
+    success: true,
+    pesan: "Proyek berhasil dihapus.",
+  };
 }

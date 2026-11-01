@@ -3,12 +3,14 @@ import { Bid } from '@/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { BidCardActions } from './BidCardActions';
 
 export interface ProjectBidsPanelProps {
   bids: Bid[];
+  projectId?: string;
 }
 
-export const ProjectBidsPanel: React.FC<ProjectBidsPanelProps> = ({ bids }) => {
+export const ProjectBidsPanel: React.FC<ProjectBidsPanelProps> = ({ bids, projectId }) => {
   return (
     <GlassCard as="section" className="p-6 sm:p-8 flex flex-col gap-6 bg-white/70">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100/80 pb-4">
@@ -99,17 +101,8 @@ export const ProjectBidsPanel: React.FC<ProjectBidsPanelProps> = ({ bids }) => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                  Status: {bid.status}
-                </span>
-                <button
-                  type="button"
-                  className="px-4 py-1.5 rounded-full bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold transition-colors shadow-2xs cursor-pointer"
-                >
-                  Pilih & Danai Escrow
-                </button>
-              </div>
+              {/* Interaksi CRUD Bid (Update & Delete) */}
+              <BidCardActions bid={bid} projectId={bid.projectId || projectId || ''} />
             </div>
           ))}
         </div>

@@ -18,7 +18,9 @@ services:
 
   db:
     image: postgres:17-alpine
-    # Kunci isolasi jaringan: Tanpa direktif "ports", hanya dijangkau via jaringan internal Compose (Mitigasi R-01)
+    # Kunci isolasi: port PostgreSQL terikat untuk pengembangan lokal pada port 5433 (menghindari bentrok port 5432 host)
+    ports:
+      - "5433:5432"
     cap_drop:
       - ALL
     cap_add:

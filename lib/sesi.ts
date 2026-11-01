@@ -1,61 +1,49 @@
-import 'server-only';
-import { cookies } from 'next/headers';
+import "server-only";
+import {
+  buatSession,
+  bacaSession,
+  hapusSession,
+  type SessionUser,
+} from "./session";
+
+/**
+ * Adapter kompatibilitas modul sesi bahasa Indonesia (Pekan 4-5)
+ * Mendukung fungsi legacy `buatSesi`, `bacaSesi`, dan `hapusSesi`
+ * yang didukung penuh oleh modul kriptografi JWT di `lib/session.ts`.
+ */
 
 export type Sesi = {
+  id?: string;
+  nama?: string;
   email: string;
   role?: string;
-  kedaluwarsa: number;
+  kedaluwarsa?: number;
 };
 
-const DELAPAN_JAM = 60 * 60 * 8; // 8 jam dalam detik
-
-// Penyimpanan sementara di memori dengan globalThis agar selamat dari Fast Refresh
-const g = globalThis as unknown as { sesiTiruan?: Map<string, Sesi> };
-const penyimpanan = (g.sesiTiruan ??= new Map<string, Sesi>());
-
-/**
- * Membuat sesi baru dan menyematkan cookie HttpOnly ke peramban
- */
-export async function buatSesi(email: string, role: string = 'CLIENT'): Promise<void> {
-  const id = crypto.randomUUID();
-  penyimpanan.set(id, {
+export async function buatSesi(email: string, role: string = "CLIENT"): Promise<void> {
+  const user: SessionUser = {
+    id: `usr-${Date.now().toString(36)}`,
+    nama: email.split("@")[0],
     email,
-    role,
-    kedaluwarsa: Date.now() + DELAPAN_JAM * 1000,
-  });
-
-  (await cookies()).set('sesi', id, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: DELAPAN_JAM,
-  });
+    role: (role as SessionUser["role"]) || "CLIENT",
+  };
+  await buatSession(user);
 }
 
-/**
- * Membaca data sesi dari cookie peramban
- */
 export async function bacaSesi(): Promise<Sesi | null> {
-  const cookieStore = await cookies();
-  const id = cookieStore.get('sesi')?.value;
-  const sesi = id ? penyimpanan.get(id) : undefined;
-
-  if (!sesi || sesi.kedaluwarsa < Date.now()) {
-    return null;
-  }
-
-  return sesi;
+  const user = await bacaSession();
+  if (!user) return null;
+  return {
+    id: user.id,
+    nama: user.nama,
+    email: user.email,
+    role: user.role,
+    kedaluwarsa: Date.now() + 60 * 60 * 8 * 1000,
+  };
 }
 
-/**
- * Menghapus sesi dari penyimpanan memori dan menghapus cookie di peramban
- */
 export async function hapusSesi(): Promise<void> {
-  const cookieStore = await cookies();
-  const id = cookieStore.get('sesi')?.value;
-  if (id) {
-    penyimpanan.delete(id);
-  }
-  cookieStore.delete('sesi');
+  await hapusSession();
 }
+
+export { buatSession, bacaSession, hapusSession, type SessionUser };

@@ -1,53 +1,104 @@
 import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { mockProjects, mockCurrentUser } from '@/lib/mockData';
-import { projectIdSchema } from '@/lib/validations/project';
+import { connection } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma/client';
+import { mockCurrentUser } from '@/lib/mockData';
 import { ProjectDetailClient } from '@/components/features/projects/ProjectDetailClient';
-import type { Project } from '@/types';
+import type { Project, ProjectScope, ProjectStatus, Bid, BidStatus } from '@/types';
 
 interface ProjectDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateStaticParams() {
-  return mockProjects.map((p) => ({
-    id: p.id,
-  }));
-}
-
 /**
- * Komponen penyaji konten (Server Component) di dalam Suspense boundary.
- * Menerima data `project` yang sudah tervalidasi dari komponen induk.
+ * ProjectDetailContent (Asynchronous Data Fetching inside Suspense Boundary)
  */
-function ProjectDetailContent({ project }: { project: Project }) {
-  return <ProjectDetailClient project={project} currentUser={mockCurrentUser} />;
-}
-
-/**
- * ProjectDetailPage (Root React Server Component)
- *
- * Garis pertahanan pertama (Input Sanitization & Route Validation):
- * 1. Mengekstrak dan meng-await params secara asinkron (standar Next.js App Router).
- * 2. Memvalidasi skema ID menggunakan Zod sebelum data layer diakses.
- * 3. Memverifikasi keberadaan entitas; jika tidak ditemukan, langsung memanggil notFound()
- *    pada level terluar agar server mengembalikan header HTTP 404 Not Found yang sah.
- */
-export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
-  // 1. Await params sesuai standar Next.js App Router
+async function ProjectDetailContent({ params }: ProjectDetailPageProps) {
+  await connection();
   const { id } = await params;
 
-// 2. Validasi format skema masukan via Zod (Mencegah format cacat / injeksi)
-  const validation = projectIdSchema.safeParse(id);
-  if (!validation.success) {
+  if (!id) {
     notFound();
   }
 
-  // 3. Verifikasi ketersediaan entitas di Data Store
-  const project = mockProjects.find((p) => p.id === id);
-  if (!project) {
+  // Ambil data proyek dan relasi bids sekaligus dari PostgreSQL via Prisma
+  type ProjectWithBids = Prisma.ProjectGetPayload<{
+    include: {
+      bids: {
+        orderBy: { createdAt: 'desc' };
+      };
+    };
+  }>;
+  let dbProject: ProjectWithBids | null = null;
+  try {
+    dbProject = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        bids: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Gagal mengambil data detail proyek dari PostgreSQL:', error);
+    dbProject = null;
+  }
+
+  if (!dbProject) {
     notFound();
   }
 
+  // Mapping data persisten ke serializable UI model
+  const project: Project = {
+    id: dbProject.id,
+    title: dbProject.title,
+    description: dbProject.description,
+    category: dbProject.category,
+    budget: dbProject.budget,
+    deadline: dbProject.deadline.toISOString(),
+    scope: (dbProject.isCampusOnly ? 'CAMPUS_SPECIFIC' : 'PUBLIC') as ProjectScope,
+    targetCampus: dbProject.campusName || undefined,
+    clientId: dbProject.id,
+    clientName: dbProject.isCampusOnly && dbProject.campusName ? `${dbProject.campusName} Lab/Faculty` : 'Klien Terverifikasi',
+    clientAvatar: '',
+    skillTags: dbProject.skills ? dbProject.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+    status: (dbProject.status as ProjectStatus) || 'OPEN',
+    createdAt: dbProject.createdAt.toISOString(),
+    isCampusOnly: dbProject.isCampusOnly,
+    skills: dbProject.skills ? dbProject.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
+    bidsCount: dbProject.bidsCount || dbProject.bids.length,
+  };
+
+  const initialBids: Bid[] = dbProject.bids.map((b) => ({
+    id: b.id,
+    projectId: b.projectId,
+    studentId: b.studentId,
+    studentName: b.studentName,
+    studentAvatar: '',
+    isVerifiedStudent: true,
+    campusName: b.campusName,
+    bidAmount: b.bidAmount,
+    estimatedDays: b.durationDays,
+    proposalMessage: b.message,
+    attachmentUrl: b.portfolioUrl || undefined,
+    status: (b.status as BidStatus) || 'PENDING',
+    createdAt: b.createdAt.toISOString(),
+  }));
+
+  return (
+    <ProjectDetailClient
+      project={project}
+      initialBids={initialBids}
+      currentUser={mockCurrentUser}
+    />
+  );
+}
+
+/**
+ * ProjectDetailPage (Root React Server Component - Pekan 6 PAW)
+ */
+export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   return (
     <main className="w-full min-h-screen">
       <Suspense
@@ -57,7 +108,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           </div>
         }
       >
-        <ProjectDetailContent project={project} />
+        <ProjectDetailContent params={params} />
       </Suspense>
     </main>
   );

@@ -39,6 +39,7 @@ export const NavbarSearchBar: React.FC<NavbarSearchBarProps> = ({
         placeholder="Cari talenta atau proyek"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        suppressHydrationWarning
         className="w-full bg-transparent text-sm text-[#0F172A] placeholder-[#475569] focus:outline-none"
       />
     </form>

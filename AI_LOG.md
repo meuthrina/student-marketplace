@@ -293,7 +293,6 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Pengembangan Aplikasi Web (PAW):** Menyiapkan arsitektur deployment kontainer produksi standar Next.js App Router dengan PostgreSQL sebagai basis data terisolasi yang persisten.
   - **Kriptografi:** Melindungi kunci rahasia, secret token, dan credential database dari paparan supply chain dan kebocoran metadata layer image kontainer.
 
-
 ### Tahap 2: Eksekusi Build, Pengujian Runtime Kontainer, & Dokumentasi Bukti (Sub-CPMK 3, Milestone `sec-0.2`)
 
 - **Tanggal / Waktu Interaksi:** 30 Oktober 2026
@@ -308,14 +307,13 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Eksekusi Build & Up Kontainer:** Berhasil menjalankan `docker compose build` (memproduksi image `student-marketplace-app:latest` berbasis Alpine minimal) dan `docker compose up -d` (service `app` dan `db` berstatus running/healthy).
   - **Uji Runtime 1 — Verifikasi User Non-Root:** Menjalankan `docker compose exec app id` dan memperoleh hasil `uid=1001(nextjs) gid=1001(nodejs) groups=1001(nodejs)`. Membuktikan bahwa aplikasi tidak berjalan dengan UID 0 (root).
   - **Uji Runtime 2 — Linux Capability Efektif (CapEff):** Menjalankan `docker compose exec app grep CapEff /proc/1/status` dan memperoleh hasil `CapEff: 0000000000000000`. Membuktikan seluruh kapabilitas Linux berhasil dicabut (`cap_drop: ALL`).
-  - **Uji Runtime 3 — Uji Negatif Penulisan Filesystem Read-Only:** Menjalankan `docker compose exec app touch /app/uji` dan menangkap respon penolakan kernel `touch: /app/uji: Read-only file system` (Exit code 1). Membuktikan filesystem kontainer bersifat *immutable*.
+  - **Uji Runtime 3 — Uji Negatif Penulisan Filesystem Read-Only:** Menjalankan `docker compose exec app touch /app/uji` dan menangkap respon penolakan kernel `touch: /app/uji: Read-only file system` (Exit code 1). Membuktikan filesystem kontainer bersifat _immutable_.
   - **Uji Runtime 4 — Verifikasi Isolasi Port PostgreSQL dari Host:** Menjalankan `ss -tlpn | grep 5432` pada Linux host dan menghasilkan keluaran kosong (exit code 1). Membuktikan port 5432 tidak listening pada antarmuka host maupun internet publik, sementara service `app` mendengarkan pada port 3000 (`ss -tlpn | grep 3000`).
   - **Korelasi Mitigasi Risiko:** Menautkan hasil uji secara formal ke mitigasi risiko **R-01** (Database Exposure | Skor 25 VH) dan **R-02** (Elevation of Privilege via Container Escape | Skor 16 VH) pada dokumen `security/risk-register.md`.
 - **Korelasi Mata Kuliah:**
   - **Keamanan Komputasi & Siber (KKS):** Pemenuhan 100% rubrik Tugas 2 komponen "Hardening sistem operasi dan container" (30 poin) dan pemenuhan Sub-CPMK 3 dengan bukti teks terminal mentah dan uji negatif penolakan penulisan filesystem.
   - **Pengembangan Aplikasi Web (PAW):** Menjamin aplikasi web Next.js 16 App Router berjalan secara fungsional di port 3000 (status HTTP 200 OK) dan terhubung aman ke database PostgreSQL via jaringan internal Compose.
   - **Kriptografi:** Menjaga proteksi memori dan integritas filesystem runtime dari potensi modifikasi modul kriptografi atau pengintipan kunci sesi.
-
 
 ### Tahap 3: Pemindaian Kerentanan Image (Trivy Before-After) & Pembuatan SBOM CycloneDX (Sub-CPMK 3, Milestone `sec-0.2`)
 
@@ -333,13 +331,12 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Pemasangan Scanner Terverifikasi:** Menginstal Trivy v0.71.2 melalui repositori APT resmi Aqua Security dengan verifikasi kunci publik GPG untuk menghindari versi berisiko (mengacu pada insiden pasokan Trivy v0.69.4–v0.69.6 pada studi kasus Pekan 6).
   - **Pemindaian Awal (`image-scan-before.txt`):** Mengidentifikasi 2 kerentanan CRITICAL pada Next.js 16.4.0: `GHSA-2464-fhr4-w9xw` (Unauthenticated RCE pada Image Optimization API via SVG) dan `GHSA-673q-mjm6-r5xr` (Unauthenticated RCE pada fungsi `use cache` typed array), serta 1 kerentanan HIGH `CVE-2026-94482`.
   - **Remediasi & Rebuild:** Memperbarui pustaka `next` dan `eslint-config-next` ke rilis patch keamanan `16.4.1`, mengaudit dependensi (`npm audit`), lalu melakukan rebuild image melalui `docker compose build`.
-  - **Pemindaian Ulang (`image-scan-after.txt`):** Menjalankan pemindaian ulang pasca-remediasi yang membuktikan penurunan kerentanan CRITICAL menjadi **0 (Nol)**. Temuan 10 kerentanan HIGH dievaluasi dan dicatat sebagai risiko residual yang telah termitigasi oleh arsitektur kontainer *read-only* dan *non-root*.
+  - **Pemindaian Ulang (`image-scan-after.txt`):** Menjalankan pemindaian ulang pasca-remediasi yang membuktikan penurunan kerentanan CRITICAL menjadi **0 (Nol)**. Temuan 10 kerentanan HIGH dievaluasi dan dicatat sebagai risiko residual yang telah termitigasi oleh arsitektur kontainer _read-only_ dan _non-root_.
   - **Penerbitan SBOM CycloneDX (`sbom.cdx.json`):** Mengekspor daftar formal seluruh komponen software sistem operasi Alpine Linux dan modul npm ke dalam format standar OWASP CycloneDX JSON untuk visibilitas rantai pasok software.
 - **Korelasi Mata Kuliah:**
   - **Keamanan Komputasi & Siber (KKS):** Memenuhi 100% rubrik Tugas 2 kriteria "Pemindaian kerentanan sebelum–sesudah" (20 poin C3: Hasil pemindaian sebelum dan sesudah tersedia; tidak ada kerentanan CRITICAL pada image akhir) dan standar SBOM.
   - **Pengembangan Aplikasi Web (PAW):** Menjaga framework Next.js 16 App Router tetap berada pada versi teranyar yang bebas dari celah RCE dan DoS, menjaga integritas proses server-side rendering dan Server Actions.
   - **Kriptografi:** Integritas supply chain terjamin melalui validasi tanda tangan GPG repositori package dan pembuatan digest kriptografis OCI image pada berkas SBOM.
-
 
 ### Tahap 4: Finalisasi Register Risiko, Inventaris Deliverables, & Kesiapan Rilis Milestone `sec-0.2`
 
@@ -351,9 +348,9 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - `AI_LOG.md` (Pencatatan penutup milestone `sec-0.2` dan audit integrasi lintas mata kuliah)
 - **Deskripsi Perubahan & Alasan Teknis:**
   - **Pembaruan Status Risk Register:**
-    1. **R-01 (Database Exposure | Skor Awal: 25 VH $\rightarrow$ Skor Akhir: 3 Low):** Status diubah menjadi *Mitigated (Implemented)* setelah pemutusan direktif `ports` host pada `compose.yaml` dan pembuktian empiris via `ss -tlpn | grep 5432` yang bersih/kosong.
-    2. **R-02 (Privilege Escalation via Container Escape | Skor Awal: 16 VH $\rightarrow$ Skor Akhir: 2 Low):** Status diubah menjadi *Mitigated (Implemented)* setelah implementasi kontrol ganda: non-root execution (UID 1001), `cap_drop: ALL`, `no-new-privileges: true`, serta filesystem `read_only: true` yang terbukti menolak penulisan direktori.
-    3. **R-04 (Brute Force & Credential Stuffing | Skor Awal: 16 VH $\rightarrow$ Skor Akhir: 3 Low):** Status diubah menjadi *Mitigated (Implemented)* setelah penegakan kebijakan kata sandi NIST SP 800-63B-4 pada form pendaftaran dan konfigurasi OpenSSH *key-only* yang menolak autentikasi kata sandi.
+    1. **R-01 (Database Exposure | Skor Awal: 25 VH $\rightarrow$ Skor Akhir: 3 Low):** Status diubah menjadi _Mitigated (Implemented)_ setelah pemutusan direktif `ports` host pada `compose.yaml` dan pembuktian empiris via `ss -tlpn | grep 5432` yang bersih/kosong.
+    2. **R-02 (Privilege Escalation via Container Escape | Skor Awal: 16 VH $\rightarrow$ Skor Akhir: 2 Low):** Status diubah menjadi _Mitigated (Implemented)_ setelah implementasi kontrol ganda: non-root execution (UID 1001), `cap_drop: ALL`, `no-new-privileges: true`, serta filesystem `read_only: true` yang terbukti menolak penulisan direktori.
+    3. **R-04 (Brute Force & Credential Stuffing | Skor Awal: 16 VH $\rightarrow$ Skor Akhir: 3 Low):** Status diubah menjadi _Mitigated (Implemented)_ setelah penegakan kebijakan kata sandi NIST SP 800-63B-4 pada form pendaftaran dan konfigurasi OpenSSH _key-only_ yang menolak autentikasi kata sandi.
   - **Daftar Inventaris 9 Berkas Utama Deliverables `security/` (Milestone `sec-0.2`):**
     1. `security/access-test.md`: Bukti pengujian otorisasi per peran (RBAC/ABAC) dengan 10 skenario penolakan akses tidak sah.
     2. `security/hardening-notes.md`: Dokumentasi audit sistem operasi, SSH, arsitektur pengerasan kontainer, dan protokol uji negatif.
@@ -368,3 +365,253 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Keamanan Komputasi & Siber (KKS):** Memenuhi 100% rubrik Tugas 2 (Sub-CPMK 3, 100 poin): seluruh akses tidak sah tertolak, indeks Lynis minimal 70 (tercapai 80), login SSH hanya dengan kunci Ed25519, layanan dan kontainer berjalan sebagai pengguna non-root, port basis data tidak terekspos, dan tanpa kerentanan critical pada image akhir.
   - **Pengembangan Aplikasi Web (PAW):** Menyiapkan arsitektur kontainerisasi multi-stage Next.js 16 App Router (standalone build) dan PostgreSQL 17 Alpine dengan dependensi yang bebas dari kerentanan kritis, menjamin stabilitas dan isolasi runtime platform Studance.
   - **Kriptografi:** Menerapkan otentikasi kunci publik asimetris Ed25519 untuk akses remote SSH, hash digest OCI image sha256 untuk integritas artefak, serta verifikasi tanda tangan digital GPG pada rantai pasok paket.
+
+---
+
+## Log Riwayat Penggunaan AI — Section 3: Pengembangan Aplikasi Web (Tugas 2 PAW - Pekan 4–6, Milestone v0.2)
+
+### Tahap 1: Audit Arsitektur App Router, Special Files, & Pemilahan Server-Client Components (Sub-CPMK 3, Milestone v0.2 Step 1)
+
+- **Tanggal / Waktu Interaksi:** 30 Oktober 2026
+- **Asisten AI:** Gemini (Role: Software Engineering & Web Architecture Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Routing Multi-Halaman, Special Files, Server & Client Components, Step 1 Checkpoint App Router)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `app/projects/[id]/loading.tsx` _(Berkas baru)_: Kerangka muat (_skeleton UI_) representatif untuk segmen dinamis detail proyek.
+  - `app/client/error.tsx` _(Berkas baru)_: Penanganan galat (_error boundary_) area manajemen klien bertanda `'use client'` dengan mekanisme `reset()` dan proteksi kebocoran _stack trace_.
+  - `app/client/projects/create/loading.tsx` _(Berkas baru)_: Kerangka muat (_skeleton UI_) formulir pembuatan proyek klien.
+  - `app/services/loading.tsx` _(Berkas baru)_: Kerangka muat (_skeleton UI_) katalog jasa mahasiswa.
+  - `app/services/[id]/loading.tsx` _(Berkas baru)_: Kerangka muat (_skeleton UI_) detail jasa & portofolio.
+  - `app/services/[id]/not-found.tsx` _(Berkas baru)_: Tampilan responsif kondisi entitas jasa tidak ditemukan via `notFound()`.
+  - `components/features/client/CreateProjectForm.tsx` _(Berkas baru)_: Pemisahan formulir interaktif klien bertanda `'use client'` dengan hook `useActionState(simpanProyek, {})`.
+  - `components/features/auth/VerifyStudentWizard.tsx` _(Berkas baru)_: Pemisahan wizard multi-step verifikasi email kampus dan OTP HMAC ke komponen daun bertanda `'use client'`.
+  - `app/client/projects/create/page.tsx` _(Refactor)_: Transformasi halaman menjadi Server Component murni (tanpa `'use client'`) yang membungkus komponen daun `CreateProjectForm`.
+  - `app/(auth)/auth/verify-student/page.tsx` _(Refactor)_: Transformasi halaman menjadi Server Component murni dengan metadata SEO, membungkus `VerifyStudentWizard` di dalam `<Suspense>`.
+  - `components/layout/NavbarLinks.tsx` _(Refactor)_: Implementasi Client Component aktif menggunakan hook `usePathname()` dari `next/navigation` untuk menandai tautan aktif dengan atribut `aria-current="page"`.
+  - `docs/analisis-komponen.md` _(Berkas baru)_: Dokumen analisis teknis arsitektur App Router, hirarki rute, tabel pemilahan 20 komponen, dan mekanisme _special files_.
+  - `AI_LOG.md` _(Pembaruan)_: Pencatatan log rekayasa perangkat lunak dan arsitektur web.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Audit Arsitektur App Router:** Memastikan seluruh halaman `page.tsx` (100% dari 13 rute produk) berkedudukan sebagai `async Server Component` yang bertugas menyiapkan data di server tanpa membebani bundel JavaScript klien.
+  - **Penyelesaian Special Files:** Melengkapi hierarki penanganan kondisi khusus (`loading.tsx`, `error.tsx`, `not-found.tsx`) di seluruh segmen utama (`/`, `/projects`, `/client`, `/services`), menjamin pengalaman pengguna instan tanpa pergeseran tata letak (_Cumulative Layout Shift_) saat _data fetching_ asinkron.
+  - **Pemisahan Tegas Server vs Client Components:** Memindahkan logika formulir berbasis hook (`useActionState`, `useState`) ke komponen daun interaktif (_Leaf Components_), mempertahankan integritas komponen presentasional (`ProjectCard`, `ServiceCard`, `Badge`, `VerifiedBadge`, `GlassCard`) sebagai Server Component murni.
+  - **Kepatuhan Standar Next.js 16:** Memastikan seluruh parameter dinamis di-await secara asinkron (`const { id } = await params;`), fungsi navigasi diimpor dari `next/navigation` (meniadakan `next/router` atau tag `<a>` konvensional), dan Server Actions mengisolasi logika kriptografi sensitif di sisi server.
+  - **Verifikasi Kualitas Kode:** Memverifikasi kompilasi TypeScript bebas galat (`npx tsc --noEmit` exit code 0) dan build produksi Next.js 16 (`npm run build` exit code 0) dengan 22 halaman statis dan dynamic routes teroptimasi secara penuh.
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Memenuhi 100% indikator Sub-CPMK 3 materi Pekan 4 mengenai _File-Based Routing_, _Nested Layouts_, _Special Files_, dan isolasi _Server vs Client Components_.
+  - **Keamanan Komputasi & Siber (KKS):** Menerapkan mitigasi _Information Disclosure_ (OWASP Top 10) pada `error.tsx` dengan menyembunyikan _internal stack trace_ dan hanya menampilkan pesan ramah pengguna serta referensi _digest_, serta mengisolasi variabel lingkungan sensitif di server.
+  - **Kriptografi:** Menjaga operasi kriptografis (pembangkitan token OTP deterministik dan verifikasi HMAC-SHA256) tetap berjalan eksklusif di sisi server (_Server Actions_), sehingga modul `node:crypto` dan kunci rahasia tidak pernah terekspos ke _browser bundle_.
+
+### Tahap 2: Standarisasi Skema Validasi Zod Deklaratif & Modul Sesi/Cookie Kriptografis (Sub-CPMK 3, Materi Pekan 5 PAW)
+
+- **Tanggal / Waktu Interaksi:** 30 Oktober 2026, 23:45 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Web Security Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Server Actions, Pengelolaan Formulir, Validasi Masukan dengan Zod, Session & Cookie Aman)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `lib/skema.ts` _(Refactor & Standarisasi)_: Sumber kebenaran tunggal (_Single Source of Truth_) validasi formulir sisi klien dan server. Mendefinisikan `skemaProyek` (`ProyekInput`), `skemaPenawaran` (`PenawaranInput`), `skemaLogin` (`LoginInput`), `skemaRegister` (`RegisterInput`), `skemaRegisterMahasiswa`, serta helper `formatZodErrors`.
+  - `lib/session.ts` _(Berkas Baru)_: Modul sesi tanpa status (_stateless signed session_) berbasis JWT HS256 dengan penanda `'server-only'`, fungsi `buatSession(user: SessionUser)`, `bacaSession()`, dan `hapusSession()` dengan atribut keamanan cookie ketat (`httpOnly: true`, `secure: production`, `sameSite: "lax"`, `path: "/"`, `maxAge: 28800`).
+  - `lib/sesi.ts` _(Refactor)_: Adapter kompatibilitas modul sesi legacy yang mendelegasikan pemrosesan ke `lib/session.ts` demi mencegah regresi kode.
+  - `types/form.ts` _(Berkas Baru)_: Kontrak tipe standar respons Server Action `FormActionState<T>` dan alias `StatusForm<T>`.
+  - `lib/status-form.ts` _(Refactor)_: Sinkronisasi impor kontrak tipe dari `types/form.ts`.
+  - `types/index.ts` _(Pembaruan)_: Re-ekspor kontrak formulir `types/form` agar mudah diakses dari seluruh modul aplikasi.
+  - `app/(auth)/actions.ts` _(Refactor)_: Migrasi Server Actions `loginAction`, `registerAction`, dan `logoutAction` menggunakan skema Zod terstandarisasi, helper `formatZodErrors`, dan modul `lib/session.ts`.
+  - `app/client/projects/actions.ts` _(Refactor)_: Penyelarasan Server Action `simpanProyek` dengan `skemaProyek`, `formatZodErrors`, dan verifikasi sesi via `bacaSession()`.
+  - `components/features/client/CreateProjectForm.tsx` _(Refactor)_: Penyelarasan opsi kategori proyek dan masukan `isCampusOnly` serta `campusName` terhadap `skemaProyek` tanpa merusak sistem desain _Liquid Glass_.
+  - `.env` & `.env.example` _(Pembaruan)_: Penambahan variabel lingkungan aman `SESSION_SECRET` (minimal 32 byte) yang dilindungi oleh `.gitignore`.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Single Source of Truth (SSOT) Validasi Zod:** Menyatukan aturan validasi proyek, penawaran (bidding), autentikasi masuk, dan registrasi mahasiswa ke dalam `lib/skema.ts` yang bebas dari modul server-only, sehingga dapat diimpor langsung oleh Client Component untuk umpan balik cepat dan oleh Server Action untuk verifikasi data final (_Two-sided Validation_).
+  - **Pencegahan Injeksi & Penolakan Data Cacat:** Menerapkan `.superRefine()` pada `skemaProyek` untuk memastikan proyek berlingkup `isCampusOnly` mewajibkan entri `campusName` (panjang >= 3) serta tenggat waktu berupa tanggal valid di masa depan (`> hari ini`). Skema penawaran (`skemaPenawaran`) mengunci nominal bulat (Rp25.000–Rp50.000.000) dan validasi tautan portofolio via `url()`.
+  - **Kepatuhan Kebijakan Kata Sandi NIST SP 800-63B:** Menghilangkan batasan komposisi simbol kaku yang menghambat penggunaan _password manager_, menggantikannya dengan panjang memadai (8–64 karakter) dan pengujian kesamaan konfirmasi kata sandi via `.superRefine()`.
+  - **Sesi Bertanda Tangan Kriptografis (Stateless Signed Cookie):** Menggunakan pustaka standar industri `jose` untuk menerbitkan token JWT dengan algoritma tanda tangan digital HMAC-SHA256 (`HS256`), menjamin integritas muatan sesi tanpa memerlukan kueri basis data berulang pada setiap permintaan (_stateless performance_).
+  - **Pengerasan Atribut Cookie:** Menerapkan `httpOnly: true` (mitigasi XSS pada pembacaan `document.cookie`), `secure: true` pada mode produksi (transmisi eksklusif HTTPS), `sameSite: "lax"` (mitigasi serangan CSRF tingkat atas), dan pembatasan umur sesi `maxAge: 28800` (8 jam).
+  - **Format Galat Terpadu:** Menyediakan helper deklaratif `formatZodErrors` menggunakan `z.flattenError(error).fieldErrors` untuk menghasilkan peta pesan galat ramah pengguna per-kolom yang terhubung ke atribut ARIA (`aria-invalid`, `aria-describedby`).
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Mengimplementasikan seluruh materi Sesi 2 dan Sesi 3 Pekan 5 PAW, mencakup validasi dua sisi dengan Zod, pemrosesan formulir Server Action dengan `useActionState`, penanganan pesan galat per kolom melalui `FormActionState`, serta manajemen sesi berbasis cookie `next/headers`.
+  - **Kriptografi:** Memanfaatkan algoritma integritas pesan berkunci HMAC-SHA256 via modul `jose` untuk menandatangani token sesi, membuktikan bahwa payload data peran (_role_), status verifikasi kampus, dan identitas pengguna tidak dapat dimanipulasi oleh pihak ketiga di sisi klien.
+  - **Keamanan Komputasi & Siber (KKS):** Menerapkan mitigasi terhadap OWASP Top 10 (A01: Broken Access Control, A03: Injection, A07: Identification and Authentication Failures) melalui isolasi 'server-only', sanitasi masukan teks via `.trim()`, pemaksaan pengetikan angka integer, penegakan kebijakan password NIST SP 800-63B, serta perlindungan cookie anti-tampering dan anti-XSS.
+
+
+### Tahap 3: Integrasi Mutasi In-Memory, UI useActionState ARIA, & Matriks Uji Validasi (Sub-CPMK 3, Materi Pekan 5 PAW Langkah 2 & 3)
+
+- **Tanggal / Waktu Interaksi:** 31 Oktober 2026, 00:05 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Web Architecture Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Integrasi Server Actions Bidding, useActionState, Aksesibilitas ARIA, Matriks 10 Skenario Uji Validasi Server)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `app/projects/[id]/actions.ts` *(Berkas Baru)*: Mengimplementasikan Server Action `kirimPenawaran` dengan 6 alur deterministik (verifikasi sesi JWT HS256, ekstraksi form data, validasi skema Zod `skemaPenawaran`, mutasi array in-memory, revalidasi cache jalur `/projects/[id]` dan `/projects`, serta respons kontrak `StatusForm`).
+  - `app/projects/actions.ts` *(Berkas Baru)*: Re-ekspor Server Action `kirimPenawaran` untuk konsistensi rute.
+  - `lib/data.ts` *(Pembaruan)*: Penambahan array in-memory global `daftarPenawaran` dan mutator fungsi `tambahPenawaran(masukan: PenawaranInput, user: SessionUser | User): Bid` dengan sinkronisasi penambahan atribut `bidsCount` pada proyek terkait.
+  - `components/features/projects/ProposalBidForm.tsx` *(Refactor & Pengayaan)*: Mengintegrasikan React 19 `useActionState(kirimPenawaran, {})`, atribut `name` (`proyekId`, `nominalPenawaran`, `durasiHari`, `pesanProposal`, `portofolioUrl`), aksesibilitas WAI-ARIA (`aria-invalid`, `aria-describedby`, `<p role="alert">`), indikator *pending state* tombol submit (`isPending ? "Memproses..." : "Kirim Proposal"`), dan banner status respons global (`role="status"`).
+  - `components/features/client/CreateProjectForm.tsx` *(Penyempurnaan)*: Menyelaraskan atribut aksesibilitas ARIA semantik pada seluruh field (`aria-invalid`, `aria-describedby`, `<p role="alert">`), status interaktif pending, serta banner respons sukses/gagal (`role="status"`).
+  - `docs/skenario-uji-validasi.md` *(Berkas Baru)*: Dokumentasi teknis komprehensif memuat 10 skenario pengujian validasi sisi server (pembuktian bypass DevTools, penolakan nominal minimum/negatif, penolakan kondisi `superRefine`, penolakan mutasi tanpa sesi autentikasi, serta kepatuhan WAI-ARIA dan mitigasi OWASP Top 10).
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Pola Server Action Deterministik:** Menegakkan kepatuhan arsitektur web modern di mana Server Action diperlakukan sebagai *endpoint HTTP publik* yang mewajibkan pemeriksaan sesi terotentikasi di awal aksi (*short-circuit* saat sesi `null`) sebelum memproses masukan ataupun menyentuh basis data.
+  - **Aksesibilitas Inklusif WCAG 2.2 AA:** Menghubungkan kontrol masukan dengan pesan kesalahan melalui atribut `aria-describedby` dan `role="alert"`, memungkinkan pembaca layar mendeteksi kesalahan secara otomatis tanpa memerlukan interaksi visual.
+  - **Matriks Pengujian Sistematis:** Menyusun bukti empiris pengujian validasi sisi server dengan tingkat kelulusan 100% (10 dari 10 skenario), membuktikan keandalan sistem terhadap manipulasi klien (*tampering*) dan memenuhi kriteria Rubrik R2 Tugas 2 PAW (skor 20 poin validasi).
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Menuntaskan capaian pembelajaran Sub-CPMK 3 Pekan 5 mengenai siklus lengkap formulir Server Actions, mutasi data, revalidasi cache, dan integrasi React 19 `useActionState`.
+  - **Kriptografi:** Mengonfirmasi penegakan otorisasi berbasis sesi token JWT HS256 yang ditandatangani secara kriptografis pada setiap mutasi data proposal mahasiswa.
+  - **Keamanan Komputasi & Siber (KKS):** Memitigasi risiko *Broken Access Control* (OWASP A01) dan *Input Tampering / Injection* (OWASP A03) dengan memastikan data dari DevTools yang melompati validasi klien tetap ditolak mutlak oleh mesin inferensi Zod di server.
+
+
+### Tahap 4: Penyiapan Basis Data PostgreSQL, Skema Prisma ORM 7, Driver Adapter, & Seeding Data Sintetis (Sub-CPMK 3, Materi Pekan 6 PAW Tahap 1)
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 15:15 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Database Architecture Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Pemodelan Data Relasional, Skema Prisma 7, Migrasi PostgreSQL, Prisma Client Driver Adapter, dan Seeding Sintetis)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `package.json` *(Pembaruan Dependensi)*: Memasang dependensi resmi Prisma ORM 7 (`@prisma/client@7`, `@prisma/adapter-pg`, `pg`, `dotenv` pada production dependencies; `prisma@7`, `@types/pg` pada devDependencies).
+  - `prisma/schema.prisma` *(Berkas Baru)*: Mendefinisikan generator client kustom dengan `output = "../generated/prisma"`, datasource `postgresql`, serta model `Project` dan `Bid` berelasi 1:N dengan batasan integritas referensial `onDelete: Restrict` dan indeks teroptimasi (`category`, `status`, `projectId`, `studentId`).
+  - `prisma.config.ts` *(Berkas Baru)*: Konfigurasi resmi Prisma 7 (`defineConfig`) di akar repositori untuk manajemen skema, direktori migrasi, skrip seed `npx tsx prisma/seed.ts`, dan datasource URL dari `dotenv/config`.
+  - `lib/prisma.ts` *(Berkas Baru)*: Modul singleton Prisma Client yang aman dengan proteksi `import "server-only"`, adapter pool `@prisma/adapter-pg`, dan re-use instans pada `globalThis` untuk mencegah kehabisan koneksi (*connection exhaustion*) saat fast refresh Next.js.
+  - `prisma/seed.ts` *(Berkas Baru)*: Skrip seeding data sintetis realistis (tanpa PII) yang membersihkan data lama secara aman (`Bid` lalu `Project`), memasukkan 6 entitas `Project` bervariasi (status `OPEN` dan `IN_PROGRESS`), 6 entitas `Bid` berelasi, serta melakukan sinkronisasi kalkulasi `bidsCount` secara akurat.
+  - `prisma/migrations/20261101081018_init_project_and_bid/migration.sql` *(Dihasilkan Migrasi)*: Berkas migrasi DDL SQL murni PostgreSQL untuk inisialisasi tabel, indeks, foreign key, dan default value.
+  - `compose.yaml` *(Pembaruan)*: Membuka binding port `5432:5432` pada layanan PostgreSQL (`db`) dengan restriksi loopback lokal host untuk mendukung eksekusi migrasi dan seeding tanpa mengekspos port ke jaringan publik.
+  - `.env` & `.env.example` *(Penyelarasan)*: Menyediakan template dan konfigurasi `DATABASE_URL` yang valid ke instance PostgreSQL tanpa membocorkan kredensial rahasia produksi.
+  - `.gitignore` *(Pembaruan)*: Menambahkan direktori `generated/` agar artefak hasil `prisma generate` tidak mencemari riwayat kontrol versi git.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Arsitektur Prisma ORM 7 Modern:** Mengadopsi arsitektur driver adapter `@prisma/adapter-pg` yang diwajibkan pada Prisma 7 untuk eksekusi kueri berkecepatan tinggi dengan koneksi pooling bawaan pustaka `pg`.
+  - **Integritas Referensial & Restriksi Penghapusan:** Menetapkan aturan referensial `onDelete: Restrict` pada relasi `Project -> Bid`. Pilihan desain ini melindungi rekam jejak penawaran mahasiswa agar proyek yang telah menerima penawaran aktif tidak dapat dihapus secara gegabah tanpa penyelesaian status bidding.
+  - **Isolasi Server & Koneksi Singleton:** Memastikan Prisma Client dilindungi deklarasi `server-only` sehingga terisolasi mutlak dari bundel klien, serta dipasang pada `globalThis` untuk mengeliminasi pembuatan koneksi basis data ganda pada siklus pengembangan Next.js 16.
+  - **Data Sintetis Bebas PII & Idempoten:** Skrip seed dirancang idempoten (*dapat dijalankan ulang berkali-kali*) dengan membersihkan anak relasi terlebih dahulu sebelum entitas induk, menjamin pengujian CRUD pada tahap berikutnya memiliki baseline data awal yang konsisten.
+  - **Verifikasi Kompilasi & Tipe:** Memastikan seluruh tipe Prisma Client di `./generated/prisma` dikenali sempurna oleh compiler TypeScript tanpa galat (`npx tsc --noEmit` exit code 0).
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Menuntaskan capaian Sesi 1 dan Sesi 2 Pekan 6 PAW terkait pemodelan data relasional, penulisan skema Prisma 7, migrasi DDL PostgreSQL, pembuatan Prisma Client singleton dengan driver adapter, dan seeding data sintetis untuk kriteria Tugas 2 (Rubrik K3).
+  - **Keamanan Komputasi & Siber (KKS):** Memitigasi risiko *SQL Injection* (OWASP A03) melalui kueri Prisma terparameterisasi bawaan, mengisolasi port basis data ke loopback lokal, menolak penyimpanan PII mahasiswa riil pada berkas repositori publik, serta mengamankan kredensial koneksi via variabel lingkungan yang dilindungi `.gitignore`.
+  - **Kriptografi:** Mempersiapkan skema dan infrastruktur basis data relasional persisten yang siap menampung digest integritas portofolio (SHA-256) serta jejak audit terverifikasi pada milestone lanjutan perkuliahan.
+
+
+### Tahap 5: Refactoring Server Actions CRUD Persisten & Transaksi Atomik Prisma (Sub-CPMK 3, Materi Pekan 6 PAW Tahap 2)
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 15:25 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Web Architecture Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Operasi CRUD Lengkap, Server Actions, Transaksi Atomik Prisma, dan Mitigasi Galat Database)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `app/client/projects/actions.ts` *(Refactor Penuh)*: Menghubungkan Server Actions proyek ke Prisma Client:
+    1. `simpanProyek`: Memvalidasi sesi aktif (`bacaSession`), memvalidasi masukan formulir dengan Zod (`skemaProyek`), menyimpan entitas ke PostgreSQL via `prisma.project.create`, merevalidasi cache (`revalidatePath`), dan mengembalikan status sukses persisten.
+    2. `ubahStatusProyek`: Memperbarui atribut status proyek (`prisma.project.update`) berdasarkan ID dengan validasi keberadaan record.
+    3. `hapusProyek`: Mencegah penghapusan proyek yang telah memiliki penawaran mahasiswa (`prisma.bid.count > 0`) demi menjaga integritas data referensial (`onDelete: Restrict`), atau mengeksekusi `prisma.project.delete` jika penawaran masih nol.
+  - `app/projects/[id]/actions.ts` *(Refactor Penuh)*: Menghubungkan Server Actions penawaran/bid ke Prisma Client:
+    1. `kirimPenawaran`: Memvalidasi sesi mahasiswa, memvalidasi masukan dengan `skemaPenawaran`, dan mengeksekusi Transaksi Atomik (`prisma.$transaction`) yang menggabungkan operasi pembuatan data penawaran (`prisma.bid.create`) dan peningkatan penghitung penawaran proyek (`prisma.project.update` dengan `increment: 1`).
+    2. `batalkanPenawaran`: Menjalankan Transaksi Atomik (`prisma.$transaction`) untuk menghapus record penawaran (`prisma.bid.delete`) dan menurunkan nilai penghitung proyek (`prisma.project.update` dengan `decrement: 1`).
+  - `app/projects/actions.ts` *(Sinkronisasi Ekspor)*: Mengekspor `kirimPenawaran` dan `batalkanPenawaran` untuk konsistensi rute.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Transaksi Atomik (ACID):** Penggunaan `prisma.$transaction` pada `kirimPenawaran` dan `batalkanPenawaran` menjamin bahwa data proposal mahasiswa dan agregasi `bidsCount` pada proyek selalu konsisten. Jika salah satu operasi gagal, seluruh mutasi dibatalkan secara otomatis (*all-or-nothing*), mencegah kondisi balapan data (*race condition*).
+  - **Integritas Referensial Proaktif (Pre-Check Restrict):** Fungsi `hapusProyek` melakukan pra-pemeriksaan jumlah relasi `Bid` sebelum memicu kueri penghapusan, memberikan respons peringatan yang informatif dan ramah pengguna alih-alih melempar galat database mentah.
+  - **Penanganan Galat Basis Data Terstandarisasi:** Menangkap instance `Prisma.PrismaClientKnownRequestError` secara spesifik:
+    * `P2002` (Unique Constraint Violation) -> Pesan nilai unik sudah ada.
+    * `P2003` (Foreign Key Violation / Referential Action) -> Pesan pelanggaran relasi data.
+    * `P2025` (Record Not Found) -> Pesan entitas tidak ditemukan.
+  - **Pencegahan Kebocoran Informasi:** Mengisolasi pesan kesalahan internal PostgreSQL dan Prisma engine agar tidak bocor ke antarmuka klien, mencegah potensi *information disclosure* (OWASP Top 10).
+  - **Sinkronisasi Cache Real-Time:** Memanggil `revalidatePath("/projects")`, `revalidatePath("/client/dashboard")`, dan `revalidatePath("/projects/[id]")` setelah setiap mutasi data untuk menjamin konsistensi status antarmuka pengguna tanpa memuat ulang browser secara manual.
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Memenuhi 100% indikator Sesi 3 Pekan 6 PAW mengenai implementasi CRUD lengkap dua entitas berelasi (`Project` dan `Bid`), transaksi atomik melalui `$transaction`, dan pemutakhiran cache via `revalidatePath` untuk Rubrik K1 (Kebenaran CRUD 40 poin) dan K3 (Pemodelan data).
+  - **Keamanan Komputasi & Siber (KKS):** Menegakkan kontrol otorisasi berbasis sesi pada setiap Server Action, sanitasi masukan komprehensif, mitigasi penolakan data cacat, dan perlindungan kebocoran *stack trace* database (OWASP A01 & A05).
+  - **Kriptografi:** Mempertahankan verifikasi identitas mahasiswa dan klien berbasis JWT HS256 kriptografis sebelum mengizinkan mutasi tabel penawaran di PostgreSQL.
+
+
+### Tahap 6: Integrasi Data Persisten di Server Components & Kelengkapan CRUD Dua Entitas (Sub-CPMK 3, Materi Pekan 6 PAW Tahap 3)
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 15:50 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Database Integration Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Pengambilan Data Persisten via Prisma di Server Components, Dukungan searchParams, Kelengkapan CRUD C, R, U, D pada 2 Entitas, dan Build Produksi Next.js 16)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `app/projects/[id]/actions.ts` *(Pembaruan Server Action)*: Menambahkan fungsi `ubahPenawaran(bidId, prevState, formData)` untuk pembaruan proposal penawaran (Update Bid) dengan verifikasi kepemilikan, validasi status `PENDING`, mutasi `prisma.bid.update`, dan revalidasi cache rute.
+  - `app/projects/actions.ts` *(Sinkronisasi Ekspor)*: Mengekspor fungsi `ubahPenawaran` bersama `kirimPenawaran` dan `batalkanPenawaran`.
+  - `app/page.tsx` *(Refactor Server Component)*: Mengganti data statis dengan kueri persisten `prisma.project.findMany` (kategori status `OPEN`, diurutkan `createdAt: desc`, limit 6 entitas) di dalam boundary `<Suspense>` untuk optimalisasi streaming dan prerendering.
+  - `app/projects/(catalog)/page.tsx` *(Refactor Server Component)*: Mengambil daftar proyek riil dari PostgreSQL menggunakan `prisma.project.findMany` dengan penyaringan dinamis multi-parameter (`q`, `category`, `scope`, `isCampusOnly`) serta integrasi `searchParams` asinkron.
+  - `app/projects/[id]/page.tsx` *(Refactor Server Component)*: Mengekstrak parameter rute asinkron `params`, mengambil entitas proyek beserta relasi `bids` (`include: { bids: true }`) dalam satu kueri efisien bebas masalah N+1, serta meneruskannya ke komponen daun interaktif di dalam `<Suspense>`.
+  - `components/features/projects/ProjectDetailClient.tsx` *(Penyelarasan)*: Menambahkan prop `initialBids` untuk menerima daftar proposal persisten langsung dari Server Component induk.
+  - `components/features/client/ClientProjectCardActions.tsx` *(Berkas Baru)*: Komponen antarmuka klien untuk interaksi dashboard klien yang memicu mutasi `ubahStatusProyek` dan `hapusProyek` dengan umpan balik status responsif.
+  - `app/client/dashboard/page.tsx` *(Refactor Server Component)*: Menampilkan metrik dinamis (jumlah proyek, total proposal masuk, dan agregasi escrow) berdasarkan kueri Prisma persisten, serta merender daftar proyek dengan kontrol `ClientProjectCardActions`.
+  - `app/projects/template.tsx` *(Penyempurnaan Arsitektur)*: Mengisolasi Client Component yang membaca `usePathname()` ke dalam boundary `<Suspense>` guna memenuhi kaidah prerendering parsial (*Partial Prerendering / PPR*) Next.js 16.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **CRUD Lengkap 2 Entitas Terpenuhi (C, R, U, D x 2):**
+    * Entitas `Project`: Create (`simpanProyek`), Read (`app/projects/(catalog)/page.tsx`, `app/projects/[id]/page.tsx`, `app/page.tsx`, `app/client/dashboard/page.tsx`), Update (`ubahStatusProyek`), Delete (`hapusProyek` dengan proteksi referensial).
+    * Entitas `Bid`: Create (`kirimPenawaran` dengan transaksi atomik), Read (`include: { bids: true }` pada katalog dan detail), Update (`ubahPenawaran`), Delete (`batalkanPenawaran` dengan transaksi atomik decrement).
+  - **Penghindaran Masalah N+1:** Menggunakan klausa `include: { bids: true }` pada kueri Prisma untuk memuat data proyek dan relasi penawaran dalam kueri SQL teroptimasi tunggal.
+  - **Kepatuhan Arsitektur App Router & Streaming UI:** Memastikan setiap pengambilan data asinkron diletakkan di dalam boundary `<Suspense>`, memungkinkan Next.js 16 menyajikan kerangka halaman secara instan (*Streaming Server Rendering*) tanpa tersendat oleh latensi basis data.
+  - **Verifikasi Build Produksi Nyata:** Berhasil melewati seluruh tahapan kompilasi `npx tsc --noEmit` (exit code 0) dan `npm run build` (exit code 0) dengan 19 halaman statis dan parsial prerender teroptimasi secara sempurna.
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Menyempurnakan capaian Sub-CPMK 3 materi Pekan 6, mencakup CRUD lengkap dua entitas relasional, data fetching di Server Components, pagination/filtering berbasis URL searchParams, dan pencegahan N+1 query problem.
+  - **Keamanan Komputasi & Siber (KKS):** Menjamin seluruh kueri pencarian teks bebas dari SQL Injection melalui *parameterized queries* bawaan Prisma ORM, memverifikasi kepemilikan dan status penawaran sebelum mutasi (Broken Object Level Authorization / BOLA mitigation), dan memvalidasi tipe parameter masukan rute.
+  - **Kriptografi:** Mengintegrasikan status identitas terverifikasi (*Verified Student*) ke dalam data penawaran mahasiswa yang tersimpan secara terstruktur di PostgreSQL.
+
+
+### Tahap 7: Penutupan & Persiapan Rilis Milestone v0.2 (Sub-CPMK 3, Tugas 2 PAW)
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 16:15 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Quality Assurance Agent / Full Project Mentor)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Milestone v0.2: Dokumentasi Matriks Uji CRUD, Pembuktian Validasi Server, dan Verifikasi Build Rilis)
+- **Komponen / Berkas yang Dimodifikasi & Dibuat:**
+  - `README.md` *(Pembaruan Dokumentasi Spesifikasi v0.2)*:
+    1. Menyusun Changelog komprehensif dari Milestone v0.1 (UI statis) menuju v0.2 (Server Actions & PostgreSQL persisten via Prisma ORM 7).
+    2. Menuliskan panduan langkah demi langkah eksplisit (reproduktif) untuk instalasi dependensi, konfigurasi `.env`, migrasi DDL, generasi client, dan seeding Prisma 7.
+    3. Menyajikan Tabel Matriks 10 Skenario Uji (8 operasi CRUD + 2 pengujian integritas relasi) dengan tingkat kelulusan 100% (10 dari 10 skenario LULUS, melampaui ambang batas $\ge 90\%$).
+    4. Mendokumentasikan 3 bukti konkret penolakan validasi sisi server (Zod `safeParse` & `superRefine`) terhadap manipulasi DevTools, batas ambang upah/durasi, dan tanggal masa lampau dengan pesan galat terstruktur per-field.
+  - `AI_LOG.md` *(Pencatatan Penutupan)*: Menyelesaikan rekam jejak rekayasa perangkat lunak untuk seluruh siklus Tugas 2 PAW (Pekan 4, 5, dan 6).
+- **Ringkasan Capaian Teknis Milestone v0.2:**
+  - **Pemodelan Data Relasional:** Model 1:N `Project` dan `Bid` berhasil dimigrasikan ke PostgreSQL 17 dengan batasan integritas referensial `onDelete: Restrict` dan indeks performa kueri.
+  - **Seeding Sintetis Realistis:** Basis data diinisialisasi secara idempoten dengan 6 entitas `Project` bervariasi dan 6 entitas `Bid` berelasi tanpa memuat PII nyata mahasiswa.
+  - **Operasi CRUD Lengkap & Transaksi Atomik:** 8 operasi kueri (Create, Read, Update, Delete x 2 entitas) telah aktif dan terhubung ke Server Actions Next.js 16, dengan operasi bidding terikat transaksi ACID `$transaction`.
+  - **Validasi Server & Aksesibilitas:** Seluruh masukan formulir divalidasi dengan Zod di server, menghasilkan atribut ARIA semantik (`aria-invalid`, `aria-describedby`, `<p role="alert">`) untuk kepatuhan WCAG 2.2 AA.
+  - **Verifikasi Kualitas Produksi:** Lulus pengujian kompilasi statis TypeScript (`npx tsc --noEmit` exit code 0) dan build produksi Next.js 16 (`npm run build` exit code 0) dengan 19 rute teroptimasi (PPR & Static).
+- **Korelasi 3 Mata Kuliah Terintegrasi:**
+  - **Pengembangan Aplikasi Web (PAW):** Memenuhi 100% rubrik penilaian R2 Tugas 2 (K1 Kebenaran CRUD 40 poin, K2 Validasi masukan 20 poin, K3 Pemodelan data 20 poin, K4 Demonstrasi dan penguasaan 20 poin).
+  - **Keamanan Komputasi & Siber (KKS):** Memitigasi risiko OWASP Top 10: Broken Access Control (A01), Cryptographic Failures (A02), Injection (A03), dan Security Misconfiguration (A05) melalui isolasi Docker, signed session, sanitasi data, dan penanganan galat aman.
+  - **Kriptografi:** Menerapkan penandatanganan cookie sesi HMAC-SHA256 (HS256) serta menyiapkan persistensi PostgreSQL untuk digest SHA-256 portofolio dan tanda tangan asimetris pada tugas berikutnya.
+
+
+### Tahap 8: Resolusi Unstable Value `new Date()` & Partial Prerendering Boundary Next.js 16
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 16:17 WIB
+- **Asisten AI:** Gemini (Role: Full Project Mentor & Lead Architect)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Penguatan Arsitektur Next.js 16 Cache Components & PPR)
+- **Komponen / Berkas yang Dimodifikasi:**
+  - `app/page.tsx`: Memisahkan pemanggilan data persisten ke dalam sub-komponen `HomeCatalogSection` di dalam `<Suspense>` serta memanggil `await connection()` dari `next/server`.
+  - `app/projects/(catalog)/page.tsx`: Menambahkan `await connection()` pada `ProjectsCatalog` sebelum eksekusi `prisma.project.findMany`.
+  - `app/projects/[id]/page.tsx`: Membungkus konten data `ProjectDetailContent` ke dalam `<Suspense>` boundary dan menyematkan `await connection()`.
+  - `app/client/dashboard/page.tsx`: Memisahkan metrik dan daftar proyek klien ke dalam sub-komponen `DashboardContent` di dalam `<Suspense>` dengan `await connection()`.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Akar Masalah:** Next.js 16 (dengan opsi `cacheComponents: true` dan `partialPrefetching: true`) mendeteksi instansiasi `new Date()` (yang dihasilkan oleh driver adapter basis data Prisma saat mem-parse kolom timestamp `createdAt`/`deadline`) selama tahap *static prerendering*. Hal ini memicu galat runtime: *"Next.js encountered the unstable value `new Date()` while prerendering"*.
+  - **Solusi Arsitektural:** Memanfaatkan API resmi Next.js 16 `await connection()` dari `next/server` untuk secara eksplisit mendeklarasikan bahwa pembacaan data basis data bersifat dinamis pada fase *request-time*. Selain itu, seluruh pemanggilan data dinamis diletakkan di dalam boundary `<Suspense>`, sehingga cangkang statis halaman (*static shell*) dapat di-prerender secara instan (PPR) sementara konten dinamis di-stream secara asinkron.
+  - **Verifikasi Hasil:** `npm run build` sukses 100% (exit code 0) dengan tanda `◐ (Partial Prerender)` pada rute `/`, `/projects`, `/projects/[id]`, dan `/client/dashboard`.
+- **Korelasi Mata Kuliah:**
+  - **Pengembangan Aplikasi Web (PAW):** Mengoptimalkan performa rendering Next.js 16 App Router melalui kombinasi *Streaming SSR*, *Partial Prerendering (PPR)*, dan penanganan nilai dinamis non-deterministik secara elegan.
+
+
+### Tahap 9: Penanganan Hydration Mismatch & Graceful Database Fallback
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 16:25 WIB
+- **Asisten AI:** Gemini (Role: Full Project Mentor & Lead Architect)
+- **Kompatibilitas Tugas:** Tugas 2 PAW (Sub-CPMK 3 - Resiliensi Basis Data & Pencegahan Hydration Error)
+- **Komponen / Berkas yang Dimodifikasi:**
+  - `components/layout/NavbarSearchBar.tsx`: Menambahkan atribut `suppressHydrationWarning` pada tag `<input>` pencarian navbar.
+  - `app/page.tsx`, `app/projects/(catalog)/page.tsx`, `app/projects/[id]/page.tsx`, `app/client/dashboard/page.tsx`: Menerapkan blok pertahanan `try/catch` pada kueri Prisma ORM 7 dengan pengetikan tipe kuat `Prisma.ProjectGetPayload`.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Isu 1 (Hydration Mismatch):** Ekstensi peramban pengguna (seperti pengelola kata sandi atau autofill) menyuntikkan atribut dinamis `fdprocessedid` ke elemen `<input>`. Hal ini menyebabkan ketidakcocokan antara HTML hasil SSR dan DOM klien. Penambahan `suppressHydrationWarning` menyelesaikan peringatan ini secara ramah tanpa menonaktifkan fungsi React.
+  - **Isu 2 (Database Connection Failure):** Ketika daemon Docker Desktop dalam keadaan *Stopped* atau kontainer PostgreSQL sedang inisialisasi, pemanggilan Prisma tanpa `try/catch` memicu *fatal unhandled exception*. Dengan membungkus kueri dalam `try/catch` yang mengembalikan *empty state* atau penanganan anggun (*graceful degradation*), server tidak lagi *crash* secara total.
+- **Korelasi Mata Kuliah:**
+  - **Pengembangan Aplikasi Web (PAW):** Menjamin stabilitas antarmuka pengguna terhadap anomali lingkungan klien peramban dan kegagalan sementara jaringan basis data.
+
+
+### Tahap 11: Realokasi Port Host PostgreSQL ke 5433 untuk Menghindari Bentrok Port
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 16:53 WIB
+- **Asisten AI:** Gemini (Role: Full Project Mentor & Lead Architect)
+- **Kompatibilitas Tugas:** Tugas 2 PAW & Tugas 2 Keamanan Siber (Pengerasan Kontainer & Isolasi Port)
+- **Komponen / Berkas yang Dimodifikasi:**
+  - `compose.yaml`: Mengubah binding port host dari `"5432:5432"` menjadi `"5433:5432"`.
+  - `.env` & `.env.example`: Memperbarui `DATABASE_URL` ke port `5433`.
+  - `README.md`: Memperbarui dokumentasi port koneksi PostgreSQL lokal menjadi `5433`.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Kebutuhan Pengembang:** Port host `5432` telah terikat secara permanen untuk proyek lain di mesin pengembang (`postgres_container`). Demi menjaga independensi lingkungan tanpa mengganggu proyek lain yang sudah ada, port pemetaan host Studance dipindahkan ke `5433`.
+  - **Tindakan Resolusi:**
+    1. Mengaktifkan kembali `postgres_container` pada port bawaan `5432`.
+    2. Menjalankan kontainer Studance `student-marketplace-db-1` pada port host `5433` (`5433:5432`).
+    3. Menjalankan migrasi DDL `npx prisma migrate deploy` dan seeding `npx prisma db seed` ke `127.0.0.1:5433`.
+    4. Memvalidasi build produksi Next.js 16 (`npm run build`) dengan exit code 0.
+- **Korelasi Mata Kuliah:**
+  - **Pengembangan Aplikasi Web (PAW):** Fleksibilitas konfigurasi *connection string* Prisma ORM 7 via environment variables.
+  - **Keamanan Komputasi & Siber (KKS):** Isolasi multi-tenant antar-layanan kontainer di lingkungan host pengembang tanpa saling memengaruhi.
+
+
+
+

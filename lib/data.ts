@@ -1,9 +1,14 @@
-import { User, Project } from '@/types';
-import { mockProjects, mockCurrentUser } from './mockData';
-import type { MasukanProyek, RegisterInput } from './skema';
+import { User, Project, Bid } from '@/types';
+import { mockProjects, mockCurrentUser, mockBids } from './mockData';
+import type { ProyekInput, MasukanProyek, RegisterInput, PenawaranInput } from './skema';
+import type { SessionUser } from './session';
 
-// Menyimpan data tiruan proyek pada globalThis agar persisten saat Fast Refresh
-const g = globalThis as unknown as { daftarProyek?: Project[]; daftarPengguna?: User[] };
+// Menyimpan data tiruan pada globalThis agar persisten saat Fast Refresh
+const g = globalThis as unknown as {
+  daftarProyek?: Project[];
+  daftarPengguna?: User[];
+  daftarPenawaran?: Bid[];
+};
 export const daftarProyek: Project[] = (g.daftarProyek ??= [...mockProjects]);
 export const daftarPengguna: User[] = (g.daftarPengguna ??= [
   mockCurrentUser,
@@ -32,6 +37,7 @@ export const daftarPengguna: User[] = (g.daftarPengguna ??= [
     skills: ['Project Management'],
   },
 ]);
+export const daftarPenawaran: Bid[] = (g.daftarPenawaran ??= [...mockBids]);
 
 /**
  * Validasi Semantik: Memeriksa apakah judul proyek sudah pernah diterbitkan
@@ -47,11 +53,16 @@ export function judulProyekSudahAda(judul: string, clientEmail?: string): boolea
 /**
  * Mutasi Data: Menambahkan proyek baru ke lapisan data tiruan
  */
-export function tambahProyek(masukan: MasukanProyek, clientEmail: string): Project {
+export function tambahProyek(masukan: ProyekInput, clientEmail: string): Project {
   const idBaru = `prj-${Date.now().toString().slice(-4)}`;
   const skillsArray = masukan.keahlian
     ? masukan.keahlian.split(',').map((s) => s.trim()).filter(Boolean)
     : [];
+
+  const isCampus = Boolean(masukan.isCampusOnly);
+  const targetKampus = isCampus
+    ? masukan.campusName || 'Universitas Pertamina'
+    : undefined;
 
   const proyekBaru: Project = {
     id: idBaru,
@@ -60,9 +71,9 @@ export function tambahProyek(masukan: MasukanProyek, clientEmail: string): Proje
     budget: masukan.anggaran,
     deadline: masukan.tenggatWaktu,
     description: masukan.deskripsi,
-    isCampusOnly: masukan.eksklusifKampus,
+    isCampusOnly: isCampus,
     skills: skillsArray,
-    scope: masukan.eksklusifKampus ? 'CAMPUS_SPECIFIC' : 'PUBLIC',
+    scope: isCampus ? 'CAMPUS_SPECIFIC' : 'PUBLIC',
     skillTags: skillsArray.length > 0 ? skillsArray : [masukan.kategori],
     status: 'OPEN',
     clientId: 'cli-001',
@@ -70,7 +81,7 @@ export function tambahProyek(masukan: MasukanProyek, clientEmail: string): Proje
     clientAvatar:
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80',
     clientRole: 'Verified Client',
-    targetCampus: masukan.eksklusifKampus ? 'Universitas Pertamina' : undefined,
+    targetCampus: targetKampus,
     createdAt: new Date().toISOString(),
     bidsCount: 0,
   };
@@ -81,6 +92,44 @@ export function tambahProyek(masukan: MasukanProyek, clientEmail: string): Proje
   }
 
   return proyekBaru;
+}
+
+/**
+ * Mutasi Data: Menambahkan proposal penawaran (bidding) baru ke lapisan data tiruan
+ */
+export function tambahPenawaran(masukan: PenawaranInput, user: SessionUser | User): Bid {
+  const idBaru = `bid-${Date.now().toString().slice(-4)}`;
+  const namaUser = 'name' in user ? user.name : user.nama;
+  const avatarUser = 'avatarUrl' in user ? user.avatarUrl : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150';
+
+  const penawaranBaru: Bid = {
+    id: idBaru,
+    projectId: masukan.proyekId,
+    studentId: user.id,
+    studentName: namaUser,
+    studentAvatar: avatarUser,
+    isVerifiedStudent: user.isVerifiedStudent ?? true,
+    campusName: user.campusName || 'Universitas Pertamina',
+    bidAmount: masukan.nominalPenawaran,
+    estimatedDays: masukan.durasiHari,
+    proposalMessage: masukan.pesanProposal,
+    attachmentUrl: masukan.portofolioUrl || undefined,
+    status: 'PENDING',
+    createdAt: new Date().toISOString().split('T')[0],
+  };
+
+  mockBids.unshift(penawaranBaru);
+  if (!daftarPenawaran.some((b) => b.id === idBaru)) {
+    daftarPenawaran.unshift(penawaranBaru);
+  }
+
+  // Perbarui counter penawaran pada proyek terkait
+  const proyek = cariProyek(masukan.proyekId);
+  if (proyek) {
+    proyek.bidsCount = (proyek.bidsCount || 0) + 1;
+  }
+
+  return penawaranBaru;
 }
 
 /**
@@ -125,4 +174,3 @@ export function cariPengguna(email: string) {
   const emailNorm = email.trim().toLowerCase();
   return daftarPengguna.find((u) => u.email.trim().toLowerCase() === emailNorm);
 }
-

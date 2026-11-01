@@ -1,5 +1,5 @@
-export type StatusForm = {
-  galat?: Record<string, string[] | undefined>;
-  pesan?: string;
-  nilai?: Record<string, string>;
-};
+import type { FormActionState } from "@/types/form";
+
+export type { FormActionState };
+
+export type StatusForm<T = unknown> = FormActionState<T>;
