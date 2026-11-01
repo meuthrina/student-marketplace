@@ -613,5 +613,54 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Keamanan Komputasi & Siber (KKS):** Isolasi multi-tenant antar-layanan kontainer di lingkungan host pengembang tanpa saling memengaruhi.
 
 
+---
+
+## Log Riwayat Penggunaan AI — Section 4: Kriptografi (Tugas 2 Kriptografi - Pekan 4)
+
+### Tahap 1: Modul Enkripsi Simetris AES-256-GCM, Proposal Vault, & Pengujian Otomatis
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 19:45 WIB
+- **Asisten AI:** Gemini (Role: Cryptography Implementation Agent & Lead Architect)
+- **Kompatibilitas Tugas:** Tugas 2 Kriptografi (Sub-CPMK 1, 2, 3 - Materi Pekan 4: Block Cipher, Stream Cipher, AES, dan Mode Operasi)
+- **Komponen / Berkas yang Dimodifikasi / Dibuat:**
+  - `lib/crypto/symmetric.ts`: Modul enkripsi simetris terautentikasi (AEAD) berbasis AES-256-GCM menggunakan API native `node:crypto`.
+  - `lib/crypto/proposal-vault.ts`: Modul adaptor tingkat tinggi *Proposal Vault* yang mengintegrasikan enkripsi simetris dengan digest SHA-256 berkas pengerjaan proyek dari Tugas 1 (`document-signer.ts`).
+  - `lib/crypto/tests/symmetric.test.ts`: Rangkaian skenario pengujian otomatis berbasis `tsx` dan `node:assert` mencakup 1 uji positif dan 4 uji kondisi tidak sah (fail-closed, tampering, wrong key, context-swapping, broken connection).
+  - `KEPUTUSAN.md`: Dokumen arsitektur dan justifikasi pemilihan mekanisme kriptografi yang memenuhi kriteria rubrik penilaian K1, K2, K3, K4, dan K5.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Spesifikasi Teknis Modul Enkripsi:** Mengimplementasikan algoritma `aes-256-gcm` dengan panjang kunci 256-bit (`KEY_LENGTH = 32`), CSPRNG `randomBytes`, IV/Nonce 96-bit (`NONCE_LENGTH = 12`) per rekomendasi NIST SP 800-38D, serta Authentication Tag 128-bit (`TAG_LENGTH = 16`). Format keluaran adalah Buffer paket terpadu berurutan `[Nonce || Ciphertext || AuthTag]`.
+  - **Prinsip Fail-Closed:** Pada fungsi dekripsi `decryptPayload`, kegagalan verifikasi integritas ditangkap secara aman dan melempar eksepsi spesifik `InvalidTag: Autentikasi integritas data gagal` guna mencegah kebocoran data terkorupsi atau eksploitasi bit-flipping.
+  - **Integrasi Komponen Dasar Tugas 1:** Modul `sealProposal` memanfaatkan `calculateDocumentHash` dari `document-signer.ts` untuk menghitung digest SHA-256 dari berkas lampiran proposal. Metadata tersebut disertakan ke dalam serialisasi payload sebelum dienkripsi.
+  - **Pengikatan Konteks Kriptografis (AAD):** Nilai `proyek:${proyekId}|student:${studentId}` dipasok sebagai *Additional Authenticated Data* (AAD) pada AES-GCM untuk memastikan paket proposal tidak dapat dipindahkan atau diklaim pada proyek/mahasiswa lain (*context-swapping attack*).
+  - **Pengujian Otomatis:** Memverifikasi 5 skenario uji:
+    1. `[UJI-01]` Round-trip enkripsi dan dekripsi proposal yang sah (100% identik) serta keunikan nonce per pemanggilan.
+    2. `[UJI-02]` Deteksi manipulasi 1 byte ciphertext yang langsung ditolak oleh tag GHASH (fail-closed).
+    3. `[UJI-03]` Penolakan seketika saat mendekripsi dengan kunci simetris 256-bit lain.
+    4. `[UJI-04]` Penolakan dekripsi proposal jika ID proyek atau ID mahasiswa pada AAD ditukar (*context separation*).
+    5. `[UJI-05]` Deteksi anomali pada integritas berkas lampiran Tugas 1 (`document-signer.ts`) terhadap hash yang tersimpan dalam vault.
+### Tahap 2: Manajemen Kunci di Luar Repositori (HKDF RFC 5869), Validasi Masukan di Batas Kripto, & Pengujian Pekan 5 & 6
+
+- **Tanggal / Waktu Interaksi:** 1 November 2026, 20:05 WIB
+- **Asisten AI:** Gemini (Role: Cryptography Implementation Agent & Lead Architect)
+- **Kompatibilitas Tugas:** Tugas 2 Kriptografi (Sub-CPMK 3 - Materi Pekan 5 & 6: AEAD, Nonce, HMAC, HKDF, Batas Kepercayaan, dan Manajemen Kunci; Rubrik R2 K3 & K4)
+- **Komponen / Berkas yang Dimodifikasi / Dibuat:**
+  - `lib/crypto/key-manager.ts`: Modul siklus hidup kunci (pembangkitan CSPRNG 256-bit, penyimpanan aman di luar repositori dengan izin POSIX `0o600` dan proteksi anti-penimpaan `O_EXCL`, pemuatan aman *fail-closed*, serta penurunan subkunci HKDF-SHA256 RFC 5869).
+  - `lib/crypto/input-validator.ts`: Modul penegakan batas kepercayaan (*Trust Boundary*) dengan pendekatan *Strict Allowlist*, normalisasi teks Unicode NFC (`normalize('NFC')`), penolakan tipe numerik tidak aman (`NaN`, `Infinity`, `boolean`), dan proteksi *fail-closed*.
+  - `lib/crypto/proposal-vault.ts`: Memutakhirkan adaptor *Proposal Vault* untuk memvalidasi masukan secara deklaratif dan menurunkan subkunci enkripsi spesifik via HKDF (`studance:v0.2:proposal-encryption`) sebelum enkripsi/dekripsi.
+  - `lib/crypto/tests/key-and-validation.test.ts`: Rangkaian pengujian otomatis baru dengan runner `tsx` yang memvalidasi kondisi batas (CSPRNG, `O_EXCL`, HKDF domain isolation, Unicode normalization NFC vs NFD, strict allowlist, boolean/NaN trap, dan penolakan izin terbuka 0o644 / kunci rusak).
+  - `KEPUTUSAN.md`: Memutakhirkan Bagian 3 dan 4 dengan dokumentasi siklus hidup kunci, prinsip *Key Usage* NIST SP 800-57, rincian HKDF RFC 5869, serta pemetaan 10 skenario pengujian komprehensif.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Siklus Hidup & Isolasi Kunci:** Menerapkan siklus *Bangkitkan › Simpan › Muat › Pakai › Ganti › Musnahkan* sesuai NIST SP 800-57. Kunci disimpan di luar repositori (`~/.studance/master.key`) dengan izin `0o600` dan flag eksklusif `wx` (`O_EXCL`) agar kunci lama tidak tertimpa. Pada platform POSIX, sistem memverifikasi `st_mode & 0o077` untuk menolak berkas jika izin terlalu terbuka.
+  - **Prinsip "Satu Kunci, Satu Tujuan" (HKDF RFC 5869):** Menurunkan subkunci terisolasi secara matematis untuk enkripsi proposal (`studance:v0.2:proposal-encryption`), terpisah dari token badge atau audit log, mencegah eksploitasi silang antar-primitif.
+  - **Sanitasi di Batas Kepercayaan:** Menghindari anomali kanonisasi di mana teks yang bermakna sama memiliki representasi biner berbeda (misal Unicode NFC vs NFD pada karakter beraksen) yang dapat merusak kalkulasi hash atau verifikasi tag. Menolak injeksi atribut tak dikenal (*Strict Allowlist*) dan jebakan tipe JavaScript/Python (`true == 1`, `NaN`).
+  - **Hasil Pengujian Komprehensif:** 10 dari 10 skenario uji (5 pada `symmetric.test.ts` dan 5 pada `key-and-validation.test.ts`) lulus 100% (*zero regression*).
+- **Korelasi 3 Mata Kuliah:**
+  - **Kriptografi:** Memenuhi rubrik R2 K3 (Penanganan Masukan & Kunci: CSPRNG, HKDF RFC 5869, izin 0o600, fail-closed) dan K4 (Pengujian Kondisi Tidak Sah) secara paripurna.
+  - **Keamanan Komputasi & Siber:** Menerapkan prinsip *Principle of Least Privilege* pada izin berkas sistem operasi, pertahanan terhadap serangan injeksi objek / *prototype pollution*, serta mitigasi kebocoran kunci di repositori publik.
+  - **Pengembangan Aplikasi Web:** Menyediakan kontrak data yang bersih dan tervalidasi sebelum menyentuh lapisan persistensi PostgreSQL / Prisma ORM dan integrasi Server Actions Next.js 16.
+
+
+
+
 
 

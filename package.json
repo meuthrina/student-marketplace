@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:crypto": "tsx lib/crypto/tests/crypto-scenario.test.ts && tsx lib/crypto/tests/symmetric.test.ts && tsx lib/crypto/tests/key-and-validation.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

@@ -26,6 +26,7 @@ Proyek terintegrasi semester 5 Universitas Pertamina:
 - `crypto-v0.1` : Tugas 1 Kriptografi (Komponen Dasar Hashing)
 - `sec-0.1` : Tugas 1 Cybersecurity (Threat Modeling STRIDE)
 - `v0.2` : Tugas 2 Web Programming (Server Actions, PostgreSQL & Prisma ORM 7 CRUD)
+- `crypto-v0.2` : Tugas 2 Kriptografi (Enkripsi Terautentikasi AES-256-GCM, HKDF RFC 5869, Proposal Vault, Key Management 0o600, Strict Allowlist, Fail-Closed)
 
 ---
 
@@ -237,37 +238,53 @@ _Kondisi Uji: Chrome v130+, Device Desktop, Halaman `/`, Skor Accessibility: 96/
 
 ## 🔐 Integrasi Kriptografi & Keamanan Siber
 
-### Kartu Tema Kriptografi & Keamanan Produk (v0.1)
+### Kartu Tema Kriptografi & Keamanan Produk (Milestone v0.2)
 
 1. **Nama Produk:**
-   Student Marketplace — Platform pasar kerja lepas berbasis ekosistem mahasiswa & identitas terverifikasi kampus.
+   Student Marketplace (Studance) — Platform pasar kerja lepas berbasis ekosistem mahasiswa & identitas terverifikasi kampus.
 
 2. **Masalah & Pengguna:**
    - **Pengguna:** Mahasiswa aktif (sebagai _freelancer_) dan Klien (dosen, departemen kampus, UMKM, perusahaan).
-   - **Masalah:** Banyak pemalsuan status mahasiswa pada proyek khusus kampus (_campus-specific projects_), serta tidak adanya bukti klaim riwayat pekerjaan/portofolio yang kredibel dan bebas dari manipulasi pihak dalam (_insider tampering_).
+   - **Masalah:** Penawaran (_bids/proposal_) mahasiswa memuat rahasia harga, durasi, dan kekayaan intelektual (IP) yang rentan disadap atau diubah di database oleh pihak ketiga (_insider tampering/MitM_); serta manipulasi konteks penawaran antar-proyek.
 
 3. **Aset yang Dilindungi:**
-   - Kredensial & status verifikasi mahasiswa (Email kampus / NIM / Identitas).
-   - Catatan transaksi & bukti penyerahan proyek (_project completion evidence_).
-   - Integritas riwayat reputasi/ulasan mahasiswa (_reputation log_).
+   - Kerahasiaan & integritas nominal harga penawaran serta pitch proposal mahasiswa (`F1`).
+   - Integritas lampiran portofolio/dokumen pengerjaan proyek (`document-signer.ts`).
+   - Kredensial kunci master sistem (`~/.studance/master.key`).
 
-4. **Model Penyerang (Attacker Model):**
-   - **Orang Luar (External Attacker):** Mencoba mengakses proyek khusus kampus tanpa hak akses (_Chosen-Plaintext Attack / Unauthorized Access_).
-   - **Orang Dalam (Insider / Malicious Student/Client):** Mencoba mengubah atau memalsukan catatan penyelesaian proyek / ulasan di database (_Active Attacker / Tampering_).
+4. **Tabel Sambungan Komponen Tugas 1 ➔ Tugas 2 (Sesuai Slide Pekan 6):**
 
-5. **Prioritas Tujuan Keamanan (Security Goals):**
-   1. **Integritas (Integrity):** Bukti penyelesaian proyek & ulasan tidak dapat diubah/dihapus tanpa terdeteksi.
-   2. **Autentikasi & Otorisasi (Authentication & Access Control):** Memastikan pembatasan akses proyek kampus (_campus-specific restriction_) tepat sasaran.
-   3. **Nirsangkal (Non-repudiation):** Klien dan mahasiswa tidak dapat menyangkal persetujuan penyelesaian proyek yang telah ditandatangani/diverifikasi.
-   4. **Kerahasiaan (Confidentiality):** Melindungi data sensitif profil mahasiswa/klien yang tidak dipublikasikan.
+| Tema                        | Komponen T1 (v0.1)                                          | Komponen T2 (v0.2)                                                                                             | Sambungan Komponen                                                                                                 | Uji yang Melintasi Sambungan                                                                                                     |
+| :-------------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| **Proposal Vault Studance** | Digest Integritas Dokumen SHA-256 (`calculateDocumentHash`) | Enkripsi Terautentikasi AEAD AES-256-GCM + HKDF-SHA256 (`symmetric.ts`, `proposal-vault.ts`, `key-manager.ts`) | Hash lampiran T1 disertakan dalam serialisasi payload sebelum disegel; AAD kontekstual `proyek:<id>\|student:<id>` | Modifikasi 1 byte file lampiran mendeteksi inkonsistensi hash terhadap data yang tersimpan di dalam Proposal Vault (`[UJI-05]`). |
 
-6. **Rencana Tahapan Tugas Kriptografi (T1 – T3):**
-   - **Tugas 1 (v0.1):** Implementation of Integrity Chain / Hash Verification untuk bukti penyelesaian proyek (Rantai Hash Catatan / _Canonical JSON Hash_).
-   - **Tugas 2 (v0.2):** Integrasi HMAC (Authentication Code) menggunakan _secret key_ terdistribusi untuk verifikasi integritas catatan transaksi dan enkripsi terautentikasi (AES-GCM) untuk dokumen/pesan proyek.
-   - **Tugas 3 (v0.3 & v1.0):** Skema Kunci Publik (Ed25519) untuk Tanda Tangan Digital sertifikat/portofolio mahasiswa + Manajemen Kunci & PKI.
+5. **Spesifikasi Teknis & Manajemen Kunci (NIST SP 800-38D & SP 800-57):**
+   - **Algoritma:** AES-256-GCM (`ALGORITHM = 'aes-256-gcm'`) dengan Nonce CSPRNG 96-bit unik per enkripsi dan Auth Tag GHASH 128-bit.
+   - **Format Paket Terpadu:** `[Nonce (12 Byte) || Ciphertext (N Byte) || Auth Tag (16 Byte)]`.
+   - **Derivasi Kunci HKDF (RFC 5869):** Penegakan _"Satu Kunci, Satu Tujuan"_ melalui `crypto.hkdfSync` dengan domain konteks `studance:v0.2:proposal-encryption` dan `studance:v0.2:badge-token`.
+   - **Penyimpanan di Luar Repositori:** Kunci master disimpan di `~/.studance/master.key` (atau variabel lingkungan `STUDANCE_MASTER_KEY`). Menggunakan izin POSIX `0o600` dan flag `wx` (`O_EXCL`) untuk mencegah penimpaan file secara tidak sengaja.
+   - **Catatan Kompatibilitas Windows:** Pada Windows OS host, bit izin POSIX `0o600` tidak berlaku sama pada file ACL NTFS sehingga file disimpan di direktori profil pengguna aktif (`%USERPROFILE%\.studance\master.key`) dengan verifikasi simulasi izin pada test suite.
+   - **Validasi di Batas Kripto (OWASP Input Validation):** Strict allowlist, normalisasi teks Unicode NFC (`normalize('NFC')`), penolakan eksplisit tipe `boolean` / `NaN` / `Infinity` / bilangan negatif, serta penanganan _fail-closed_.
 
-7. **Uji Negatif Pertama (Negatif/Boundary Test v0.1):**
-   - Mengubah 1 karakter/byte pada data penyerahan proyek (_deliverable payload_) atau mengubah status verifikasi mahasiswa secara ilegal → verifikasi integritas rantai hash langsung gagal (mengembalikan indeks data yang rusak).
+6. **Keterbatasan Mekanisme v0.2 (K2 Kunci Bersama) Menuju Tugas 3:**
+   - Kunci simetris bersama (_shared key_) belum mendukung **Nirsangkal (_Non-Repudiation_)** karena pemegang kunci yang sama secara teoritis dapat memalsukan data. Keterbatasan ini menjadi dasar perancangan Tanda Tangan Digital Asimetris (Ed25519/RSA-PSS) pada Tugas 3.
+
+---
+
+### 🧪 Skenario Uji Otomatis Kriptografi Tugas 2 (`npm run test:crypto`)
+
+| ID Uji      | Modul Pengujian              | Jenis             | Deskripsi Skenario & Kondisi Batas                                                | Ekspektasi & Respons Fail-Closed                                                 |
+| :---------- | :--------------------------- | :---------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------------- |
+| **UJI-01**  | `symmetric.test.ts`          | Positif           | Enkripsi payload proposal valid -> dekripsi dengan kunci sah                      | Data kembali 100% identik & nonce 96-bit terbukti selalu acak/baru               |
+| **UJI-02**  | `symmetric.test.ts`          | Negatif           | Memodifikasi 1 byte pada bagian ciphertext terenkripsi                            | Dekripsi ditolak seketika (_fail-closed_) dengan galat `InvalidTag`              |
+| **UJI-03**  | `symmetric.test.ts`          | Negatif           | Mendekripsi paket valid menggunakan kunci simetris 256-bit lain                   | Dekripsi ditolak seketika (_fail-closed_) dengan galat `InvalidTag`              |
+| **UJI-04**  | `symmetric.test.ts`          | Negatif           | Context-swapping: AAD proyekId atau studentId ditukar                             | Verifikasi AAD gagal, memicu eksepsi `InvalidTag`                                |
+| **UJI-05**  | `symmetric.test.ts`          | Integrasi T1      | Memodifikasi 1 byte berkas lampiran portofolio di penyimpanan                     | Verifikasi `verifyDocumentIntegrity` mendeteksi ketidaksesuaian hash             |
+| **UJI-K01** | `key-and-validation.test.ts` | Positif & Negatif | Pembangkitan CSPRNG 256-bit & uji penimpaan file eksisting                        | Flag `O_EXCL` (`wx`) menolak penimpaan kunci lama (_FileExistsError_)            |
+| **UJI-K02** | `key-and-validation.test.ts` | Positif           | Derivasi subkunci HKDF-SHA256 RFC 5869 untuk proposal & token                     | Subkunci terbukti terisolasi secara matematis satu sama lain dan dari master key |
+| **UJI-K03** | `key-and-validation.test.ts` | Positif           | Masukan teks beraksen dengan encoding berbeda (Unicode NFC vs NFD)                | Normalisasi NFC menyamakan representasi biner sebelum enkripsi                   |
+| **UJI-K04** | `key-and-validation.test.ts` | Negatif           | Masukan bernilai `NaN`, `Infinity`, `boolean`, angka negatif, atau properti asing | Ditolak seketika oleh `ValidationError` di batas kripto (_strict allowlist_)     |
+| **UJI-K05** | `key-and-validation.test.ts` | Negatif           | Kunci dengan panjang salah (< 32 byte) atau izin terlalu terbuka (`0o644`)        | Ditolak secara _fail-closed_ dengan galat `KeyManagementError`                   |
 
 ---
 
