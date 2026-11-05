@@ -659,8 +659,32 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Keamanan Komputasi & Siber:** Menerapkan prinsip *Principle of Least Privilege* pada izin berkas sistem operasi, pertahanan terhadap serangan injeksi objek / *prototype pollution*, serta mitigasi kebocoran kunci di repositori publik.
   - **Pengembangan Aplikasi Web:** Menyediakan kontrak data yang bersih dan tervalidasi sebelum menyentuh lapisan persistensi PostgreSQL / Prisma ORM dan integrasi Server Actions Next.js 16.
 
+---
 
+## Log Riwayat Penggunaan AI — Section 4: Praktikum Modul 6 — PostgreSQL dan Prisma ORM 7
 
+### Tahap 1: Branch Praktikum, Seeding Idempoten via Upsert, Verifikasi Transaksi Rollback, & Dokumen Teknis Modul 6
 
-
+- **Tanggal / Waktu Interaksi:** 5 November 2026, 21:20 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Database Specialist / Full Project Mentor)
+- **Kompatibilitas Tugas:** Praktikum Pengembangan Aplikasi Web (Modul 6: PostgreSQL dan Prisma ORM 7; Bobot 3,75% Dokumen Teknis)
+- **Komponen / Berkas yang Dimodifikasi / Dibuat:**
+  - `prisma/seed.ts`: Memperbarui skrip seeding basis data sintetis dari pendekatan destruktif (`deleteMany` + `create`) menjadi metode non-destruktif idempoten berbasis `upsert` dengan pengenal deterministik (`seed-proj-001` s.d. `seed-proj-006` dan `seed-bid-001` s.d. `seed-bid-006`).
+  - `docs/praktikum/modul-06.md`: Menyusun dokumen laporan teknis formal Praktikum Modul 6 secara komprehensif mengikuti kerangka baku 8 bagian:
+    1. Rancangan Data (Diagram relasi `Project` 1 : N `Bid`, indeks, primary/foreign key, dan analisis bisnis mendalam aturan `onDelete: Restrict` vs `CASCADE` vs `SET NULL`).
+    2. Skema dan Migrasi (Cuplikan `schema.prisma`, DDL `migration.sql`, dan blok luaran psql `\d "Bid"` serta `\d "Project"`).
+    3. Seed dan Prisma Client (Log terminal eksekusi seed 2x berturut-turut, justifikasi pemisahan PrismaClient di `seed.ts` dan larangan impor `lib/prisma.ts` terkait direktif `"server-only"`).
+    4. Operasi CRUD (Tabel pemetaan operasi `Project` dan `Bid`, metode Prisma Client, kode galat `P2002`, `P2003`, `P2025`, mitigasi kebocoran skema / OWASP Top 10 A05).
+    5. Transaksi dan Rollback (Analisis penolakan penghapusan relasi tanpa transaksi via `P2003`, bukti empiris log kueri pengujian atomisitas transaksi rollback).
+    6. Skenario Uji (Matriks 10 skenario uji CRUD dan relasi dengan hasil aktual dan tingkat kelulusan 100%).
+    7. Kendala dan Penyelesaian (Pembersihan cache `ENOSPC` NPM, binding port Docker/WSL 5432, dan pemisahan siklus hidup `generate`/`seed` Prisma 7).
+    8. Catatan Pemanfaatan AI (Daftar prompt, peran agen, komponen yang dihasilkan, dan metode verifikasi mandiri).
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Sifat Idempoten Seeding:** Penggunaan `prisma.project.upsert` dan `prisma.bid.upsert` memastikan bahwa eksekusi berulang tidak memicu pelanggaran `P2002` (*unique constraint failed*) atau penambahan duplikasi record, menjaga konsistensi state awal tepat pada 6 entitas `Project` dan 6 entitas `Bid`.
+  - **Pemisahan Lingkungan Runtime:** Mengonfirmasi bahwa skrip seed yang dijalankan oleh runner CLI Node.js (`tsx`) wajib menginisialisasi instans `PrismaClient` tersendiri, memuat `dotenv/config`, serta menutup koneksi secara eksplisit via `prisma.$disconnect()` pada blok `finally`, terisolasi dari Next.js RSC yang diproteksi oleh `"server-only"`.
+  - **Verifikasi Atomisitas ACID:** Menguji transaksi batch `prisma.$transaction` di mana operasi pertama (`prisma.bid.deleteMany`) valid namun operasi kedua (`prisma.project.delete`) sengaja digagalkan dengan target ID fiktif (`P2025`). Terbukti secara empiris melalui kueri `SELECT COUNT(*)` bahwa seluruh perubahan operasi pertama dibatalkan (*rolled back*) secara sempurna oleh mesin PostgreSQL.
+- **Korelasi 3 Mata Kuliah:**
+  - **Pengembangan Aplikasi Web:** Mengintegrasikan model relasi 1:N PostgreSQL pada Next.js 16 App Router dengan Prisma ORM 7, Server Actions, dan Zod validation, memenuhi target Sub-CPMK 3 (Tugas 2 v0.2 & Praktikum Modul 6).
+  - **Kriptografi:** Memastikan data proposal dalam tabel `Bid` mempertahankan referensi integritas terhadap digest SHA-256 dan kunci enkripsi simetris AES-256-GCM tanpa risiko record terhapus sepihak.
+  - **Keamanan Komputasi & Siber:** Menerapkan kontrol integritas referensial data (*onDelete: Restrict*), isolasi database port Docker non-root, serta translasi galat Prisma tanpa mengekspos informasi skema internal ke peramban publik (OWASP Top 10 A05).
 

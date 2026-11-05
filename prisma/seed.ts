@@ -15,18 +15,12 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Memulai seeding data sintetis Studance...");
+  console.log("🌱 Memulai seeding data sintetis Studance (Idempoten via Upsert)...");
 
-  // 1. Bersihkan data lama dengan urutan aman (Bid terlebih dahulu karena batasan onDelete: Restrict)
-  console.log("🧹 Membersihkan tabel Bid...");
-  await prisma.bid.deleteMany();
-
-  console.log("🧹 Membersihkan tabel Project...");
-  await prisma.project.deleteMany();
-
-  // 2. Data Proyek Sintetis (Minimal 5 entitas dengan variasi kategori & status)
+  // 1. Data Proyek Sintetis dengan ID Deterministik (6 entitas variatif)
   const proyekData = [
     {
+      id: "seed-proj-001",
       title: "Pengembangan Sistem Informasi Inventaris Lab Kampus",
       category: "Web Development",
       description: "Membangun sistem informasi inventaris laboratorium berbasis Next.js App Router dan PostgreSQL dengan otentikasi role-based untuk teknisi lab.",
@@ -38,6 +32,7 @@ async function main() {
       status: "OPEN",
     },
     {
+      id: "seed-proj-002",
       title: "Redesain UI/UX Dashboard Monitoring Energi Terbarukan",
       category: "UI/UX Design",
       description: "Membuat rancangan wireframe, prototype interaktif Figma, dan design system berstandar WCAG 2.2 AA untuk portal pemantauan panel surya.",
@@ -49,6 +44,7 @@ async function main() {
       status: "OPEN",
     },
     {
+      id: "seed-proj-003",
       title: "Analisis Sentimen Ulasan Aplikasi Mobile Berbasis NLP",
       category: "Data & AI",
       description: "Pembangunan model klasifikasi ulasan pelanggan Play Store menggunakan teknik Natural Language Processing dan visualisasi analitik interaktif.",
@@ -60,6 +56,7 @@ async function main() {
       status: "OPEN",
     },
     {
+      id: "seed-proj-004",
       title: "Aplikasi Presensi Mahasiswa Berbasis Geolocation Flutter",
       category: "Mobile Apps",
       description: "Pembuatan aplikasi mobile presensi kehadiran berbasis radius koordinat GPS terintegrasi REST API backend.",
@@ -71,6 +68,7 @@ async function main() {
       status: "IN_PROGRESS",
     },
     {
+      id: "seed-proj-005",
       title: "Portal Landing Page Komunitas Pengembang Kampus",
       category: "Web Development",
       description: "Pengembangan landing page interaktif dengan tema dark mode, integrasi kalender acara, dan form registrasi anggota komunitas.",
@@ -82,6 +80,7 @@ async function main() {
       status: "OPEN",
     },
     {
+      id: "seed-proj-006",
       title: "Desain Antarmuka Aplikasi Manajemen Keuangan Mahasiswa",
       category: "UI/UX Design",
       description: "Perancangan UI kit mobile modern untuk pencatatan pengeluaran harian dan budgeting bulanan mahasiswa kos.",
@@ -94,19 +93,30 @@ async function main() {
     },
   ];
 
-  console.log("🚀 Memasukkan entitas Project ke database...");
-  const createdProjects = [];
+  console.log("🚀 Menyimpan entitas Project ke database via upsert...");
   for (const item of proyekData) {
-    const proj = await prisma.project.create({
-      data: item,
+    await prisma.project.upsert({
+      where: { id: item.id },
+      update: {
+        title: item.title,
+        category: item.category,
+        description: item.description,
+        budget: item.budget,
+        deadline: item.deadline,
+        isCampusOnly: item.isCampusOnly,
+        campusName: item.campusName,
+        skills: item.skills,
+        status: item.status,
+      },
+      create: item,
     });
-    createdProjects.push(proj);
   }
 
-  // 3. Data Penawaran (Bid) Sintetis Berelasi (Minimal 6 entitas)
+  // 2. Data Penawaran (Bid) Sintetis Berelasi via upsert (6 entitas)
   const penawaranData = [
     {
-      projectId: createdProjects[0].id,
+      id: "seed-bid-001",
+      projectId: "seed-proj-001",
       studentId: "mhs-up-001",
       studentName: "Ahmad Fauzi",
       studentEmail: "ahmad.fauzi@student.universitaspertamina.ac.id",
@@ -118,7 +128,8 @@ async function main() {
       status: "PENDING",
     },
     {
-      projectId: createdProjects[0].id,
+      id: "seed-bid-002",
+      projectId: "seed-proj-001",
       studentId: "mhs-up-002",
       studentName: "Siti Nurhaliza",
       studentEmail: "siti.nurhaliza@student.universitaspertamina.ac.id",
@@ -130,7 +141,8 @@ async function main() {
       status: "PENDING",
     },
     {
-      projectId: createdProjects[1].id,
+      id: "seed-bid-003",
+      projectId: "seed-proj-002",
       studentId: "mhs-ui-003",
       studentName: "Budi Pratama",
       studentEmail: "budi.pratama@ui.ac.id",
@@ -142,7 +154,8 @@ async function main() {
       status: "PENDING",
     },
     {
-      projectId: createdProjects[2].id,
+      id: "seed-bid-004",
+      projectId: "seed-proj-003",
       studentId: "mhs-up-004",
       studentName: "Dewi Anggraini",
       studentEmail: "dewi.anggraini@student.universitaspertamina.ac.id",
@@ -154,7 +167,8 @@ async function main() {
       status: "PENDING",
     },
     {
-      projectId: createdProjects[3].id,
+      id: "seed-bid-005",
+      projectId: "seed-proj-004",
       studentId: "mhs-itb-005",
       studentName: "Farhan Mahendra",
       studentEmail: "farhan.m@itb.ac.id",
@@ -166,7 +180,8 @@ async function main() {
       status: "ACCEPTED",
     },
     {
-      projectId: createdProjects[5].id,
+      id: "seed-bid-006",
+      projectId: "seed-proj-006",
       studentId: "mhs-ugm-006",
       studentName: "Nadia Saraswati",
       studentEmail: "nadia.saraswati@ugm.ac.id",
@@ -179,16 +194,29 @@ async function main() {
     },
   ];
 
-  console.log("🚀 Memasukkan entitas Bid ke database...");
+  console.log("🚀 Menyimpan entitas Bid ke database via upsert...");
   for (const bid of penawaranData) {
-    await prisma.bid.create({
-      data: bid,
+    await prisma.bid.upsert({
+      where: { id: bid.id },
+      update: {
+        projectId: bid.projectId,
+        studentId: bid.studentId,
+        studentName: bid.studentName,
+        studentEmail: bid.studentEmail,
+        campusName: bid.campusName,
+        bidAmount: bid.bidAmount,
+        durationDays: bid.durationDays,
+        message: bid.message,
+        portfolioUrl: bid.portfolioUrl,
+        status: bid.status,
+      },
+      create: bid,
     });
   }
 
-  // 4. Sinkronisasi kalkulasi bidsCount pada masing-masing entitas Project
+  // 3. Sinkronisasi kalkulasi bidsCount pada masing-masing entitas Project
   console.log("🔄 Melakukan sinkronisasi bidsCount pada entitas Project...");
-  for (const proj of createdProjects) {
+  for (const proj of proyekData) {
     const count = await prisma.bid.count({
       where: { projectId: proj.id },
     });
@@ -215,4 +243,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
