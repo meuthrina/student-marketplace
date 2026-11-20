@@ -35,6 +35,7 @@ const ALLOWED_PROPOSAL_FIELDS = new Set([
  * @param raw Objek mentah masukan pengguna/klien
  * @returns ProposalSecretPayload yang telah dinormalkan dan aman
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function validateAndNormalizeProposalInput(raw: any): ProposalSecretPayload {
   // 1. Validasi struktur objek dasar
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {

@@ -57,13 +57,13 @@ export function generateAndSaveMasterKey(targetPath?: string): string {
       mode: 0o600,
       flag: 'wx',
     });
-  } catch (error: any) {
-    if (error.code === 'EEXIST') {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === 'EEXIST') {
       throw new KeyManagementError(
         `FileExistsError: Berkas kunci sudah ada di '${destination}'. Operasi dibatalkan demi mencegah penimpaan kunci.`
       );
     }
-    throw new KeyManagementError(`WriteKeyError: Gagal menyimpan berkas kunci master: ${error.message}`);
+    throw new KeyManagementError(`WriteKeyError: Gagal menyimpan berkas kunci master: ${(error as Error).message}`);
   }
 
   return destination;
@@ -100,8 +100,8 @@ export function loadMasterKey(
 
     try {
       rawContent = fs.readFileSync(resolvedPath, 'ascii').trim();
-    } catch (err: any) {
-      throw new KeyManagementError(`ReadError: Gagal membaca berkas kunci master: ${err.message}`);
+    } catch (err: unknown) {
+      throw new KeyManagementError(`ReadError: Gagal membaca berkas kunci master: ${(err as Error).message}`);
     }
   } else if (process.env[MASTER_KEY_ENV]) {
     rawContent = process.env[MASTER_KEY_ENV]!.trim();
