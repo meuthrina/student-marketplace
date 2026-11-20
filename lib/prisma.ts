@@ -18,7 +18,8 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    // Modul 7: Tampilkan setiap query SQL, warning, dan error di terminal saat debugging
+    log: ["query", "warn", "error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
