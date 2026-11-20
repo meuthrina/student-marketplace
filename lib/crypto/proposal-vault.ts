@@ -41,6 +41,7 @@ export interface UnsealedProposal {
  * @param rawPayload Objek masukan proposal mentah
  * @returns Buffer paket terenkripsi terpadu [Nonce || Ciphertext || AuthTag]
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function sealProposal(masterKey: Buffer, rawPayload: ProposalSecretPayload | any): Buffer {
   // 1. Validasi dan normalisasi masukan di batas sistem (Trust Boundary)
   const payload = validateAndNormalizeProposalInput(rawPayload);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useActionState, useEffect } from 'react';
+import React, { useActionState, useEffect, useState } from 'react';
 import { Project } from '@/types';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ProposalFileField } from '@/components/features/projects/ProposalFileField';
@@ -41,9 +41,16 @@ export const ProposalBidForm: React.FC<ProposalBidFormProps> = ({
   rejectedFile = null,
   onFileUpload,
   onRemoveFile,
+  onProposalChange,
 }) => {
   // Integrasi React 19 useActionState dengan Server Action kirimPenawaran
   const [state, formAction, isPending] = useActionState(kirimPenawaran, {});
+
+  // Modul 7 (Galat 4): Nilai turunan saat render (Derived State vs useEffect)
+  // Menghindari jebakan useEffect([]) yang tidak sinkron saat mengetik.
+  // Nilai sisa dihitung langsung saat proses render: (1500 - teksProposal.length).
+  const [teksProposal, setTeksProposal] = useState(state.nilai?.pesanProposal || proposalText || "");
+  const sisaKarakter = 1500 - teksProposal.length;
 
   // Menutup modal secara otomatis setelah sukses pengajuan proposal
   useEffect(() => {
@@ -193,7 +200,11 @@ export const ProposalBidForm: React.FC<ProposalBidFormProps> = ({
               name="pesanProposal"
               rows={4}
               maxLength={1500}
-              defaultValue={state.nilai?.pesanProposal || proposalText}
+              value={teksProposal}
+              onChange={(e) => {
+                setTeksProposal(e.target.value);
+                if (onProposalChange) onProposalChange(e.target.value);
+              }}
               aria-invalid={Boolean(state.galat?.pesanProposal || isProposalInvalid)}
               aria-describedby={state.galat?.pesanProposal ? "galat-pesanProposal" : undefined}
               placeholder="Tuliskan pendekatan teknis, deliverables, dan pengalaman relevan Anda (minimal 20 karakter)..."
@@ -203,7 +214,7 @@ export const ProposalBidForm: React.FC<ProposalBidFormProps> = ({
               <span className={state.galat?.pesanProposal || isProposalInvalid ? 'text-red-500 font-medium' : 'text-[#475569]'}>
                 Minimal 20 karakter
               </span>
-              <span className="font-medium text-[#475569]">Maksimal 1500 karakter</span>
+              <span className="font-medium text-[#475569]">{sisaKarakter} karakter tersisa</span>
             </div>
           </div>
           {state.galat?.pesanProposal?.[0] && (

@@ -688,3 +688,49 @@ Sesuai dengan ketentuan RPS MK Pengembangan Aplikasi Web, Kriptografi, dan Keama
   - **Kriptografi:** Memastikan data proposal dalam tabel `Bid` mempertahankan referensi integritas terhadap digest SHA-256 dan kunci enkripsi simetris AES-256-GCM tanpa risiko record terhapus sepihak.
   - **Keamanan Komputasi & Siber:** Menerapkan kontrol integritas referensial data (*onDelete: Restrict*), isolasi database port Docker non-root, serta translasi galat Prisma tanpa mengekspos informasi skema internal ke peramban publik (OWASP Top 10 A05).
 
+
+
+---
+
+## Log Riwayat Penggunaan AI — Section 5: Praktikum Modul 7 — Debugging dan Telaah Kode
+
+### Tahap 1: Konfigurasi Debugger VS Code, Perbaikan Konversi Tipe Zod, Error Boundary Segmen Dinamis, dan Dokumen Teknis Modul 7
+
+- **Tanggal / Waktu Interaksi:** 20 November 2026, 13:20 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Debugging Agent / Lead Architect)
+- **Kompatibilitas Tugas:** Praktikum Pengembangan Aplikasi Web (Modul 7: Debugging dan Telaah Kode; Bobot 3,75% Dokumen Teknis)
+- **Komponen / Berkas yang Dimodifikasi / Dibuat:**
+  - `.vscode/launch.json`: Membuat konfigurasi debugging resmi Next.js 16 (`Next.js: debug server-side`, `Next.js: debug client-side`, dan `Next.js: debug full stack` dengan inspector flag `--inspect` dan `debugWithChrome`).
+  - `lib/prisma.ts`: Menegaskan opsi log query, warn, dan error (`log: ["query", "warn", "error"]`) agar kueri SQL dan kode galat Prisma (P2002, P2003, P2025) tampil di terminal debugging.
+  - `lib/skema.ts`: Memperbaiki jebakan boolean coercion pada `isCampusOnly` dengan mengganti `z.coerce.boolean()` menjadi `z.union([z.boolean(), z.stringbool()]).default(false)` guna mencegah evaluasi string `"false"` menjadi `true`.
+  - `app/projects/[id]/error.tsx`: Membuat komponen Client Component error boundary dengan penangkapan `console.error(error)` di dalam `useEffect`, presentasi ramah pengguna disertai `error.digest`, serta tombol pemulihan interaktif `retry()` / `reset()`.
+  - `app/projects/[id]/actions.ts` & `app/client/projects/actions.ts`: Menata ulang penanganan galat Server Action agar `redirect()` selalu berada di luar blok `try...catch` (mencegah penangkapan keliru `NEXT_REDIRECT`) dan galat konkurensi database `P2025` diteruskan ke `error.tsx` (tidak ditelan diam-diam).
+  - `components/features/projects/ProposalBidForm.tsx`: Mengoreksi pola reaktivitas penghitung sisa karakter dari anti-pattern `useState` + `useEffect([])` menjadi nilai turunan murni saat proses render (`1500 - teksProposal.length`).
+  - `docs/praktikum/modul-07.md`: Menyusun dokumen teknis formal Modul 7 mencakup 7 bab standar: Lingkungan Debugger, Daftar Galat, Catatan Penelusuran (4 galat), Keputusan Teknis, Telaah Kode, Kendala & Penyelesaian, dan Catatan Pemanfaatan AI.
+  - `docs/praktikum/image/modul-07/`: Membuat direktori khusus untuk menampung tangkapan layar pengujian.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Resolusi Boolean Coercion (Zod 4):** `z.coerce.boolean()` memanfaatkan fungsi bawaan JavaScript `Boolean(input)`. Di JavaScript, setiap string non-kosong bernilai truthy (`Boolean("false") === true`), sehingga opsi non-eksklusif kampus tidak pernah tersimpan sebagai `false`. Penggunaan `z.stringbool()` memetakan `"true"` ke `true`, `"false"` ke `false`, dan menolak string acak secara deterministik.
+  - **Integritas Navigasi Server Action (`NEXT_REDIRECT`):** `redirect()` di Next.js App Router bekerja dengan melempar eksepsi khusus. Membungkus `redirect()` di dalam `try...catch` membuat navigasi dibatalkan karena eksepsi ditelan oleh blok `catch`. Penempatan `redirect()` di luar `try...catch` menjamin pengalihan rute berjalan sukses setelah operasi database selesai.
+  - **Transparansi Galat (OWASP A10 Mishandling of Exceptional Conditions):** Menelan galat Prisma (`P2003` foreign key violation dan `P2025` record not found) dengan sekadar mencetak string statis membahayakan auditabilitas sistem. Meneruskan galat `P2025` ke error boundary memungkinkan pengguna mendapatkan antarmuka pemulihan dengan `error.digest` tanpa membocorkan struktur skema database internal.
+  - **Reaktivitas UI Bebas Efek:** Menghitung sisa karakter secara langsung pada saat render menghilangkan potensi *stale state* akibat dependency array kosong pada `useEffect`, mencegah *unnecessary re-renders*, serta menjamin kode bersih dari peringatan ESLint `react-hooks/exhaustive-deps`.
+- **Korelasi 3 Mata Kuliah:**
+  - **Pengembangan Aplikasi Web:** Penegakan standar debugging Next.js App Router, perbaikan Server Actions, dan implementasi Error Boundary tingkat segmen rute dinamis (Sub-CPMK 3).
+  - **Kriptografi:** Konsistensi referensi data penawaran pada relasi `Bid` dan `Project` tanpa risiko kehilangan integritas hash SHA-256 dan segel digital akibat operasi penghapusan tidak terencana.
+  - **Keamanan Komputasi & Siber:** Mitigasi *OWASP Top 10 A10 (Mishandling of Exceptional Conditions)* melalui penanganan eksepsi terstruktur, isolasi logging query sensitif, dan pencegahan kebocoran informasi stack trace ke peramban publik via hash `error.digest`.
+
+
+### Tahap 2: Audit Runtime, Standarisasi Bukti Pengujian, dan Finalisasi Dokumen Teknis Modul 7
+
+- **Tanggal / Waktu Interaksi:** 20 November 2026, 13:40 WIB
+- **Asisten AI:** Gemini (Role: Software Engineering & Debugging Agent / Lead Architect)
+- **Kompatibilitas Tugas:** Praktikum Pengembangan Aplikasi Web (Modul 7: Debugging dan Telaah Kode; Penyiapan Bukti & Commit)
+- **Komponen / Berkas yang Dimodifikasi:**
+  - `docs/praktikum/modul-07.md`: Memutakhirkan draf laporan teknis dengan panduan penangkapan layar terperinci (`ss-01` s.d. `ss-05`), format baku komentar telaah peer review dengan blok saran/suggestion, serta kerangka respons tanggapan telaah kode.
+  - `AI_LOG.md`: Mencatat siklus audit dan verifikasi bebas galat linter dan compiler.
+- **Deskripsi Perubahan & Alasan Teknis:**
+  - **Verifikasi Linter & Pemeriksa Tipe:** Memastikan seluruh komponen dan modul lulus uji statis tanpa pengecualian (`npx tsc --noEmit` exit code 0 dan `npm run lint` 0 errors).
+  - **Kerapian Git:** Memastikan berkas rahasia `.env`, build cache `.next`, dan Prisma client yang dihasilkan (`generated/`) tidak di-stage atau di-commit ke repositori Git.
+- **Korelasi 3 Mata Kuliah:**
+  - **Pengembangan Aplikasi Web:** Menjaga kebersihan pohon kerja Git dan konsistensi artefak dokumentasi akademik.
+  - **Kriptografi:** Pencegahan kebocoran artefak kunci dan berkas sensitif dari riwayat pelacakan Git.
+  - **Keamanan Komputasi & Siber:** Kepatuhan terhadap *Git Hygiene* dan standar integritas repositori perangkat lunak.

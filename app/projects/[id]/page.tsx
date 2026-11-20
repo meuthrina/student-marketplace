@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/generated/prisma/client';
 import { mockCurrentUser } from '@/lib/mockData';
 import { ProjectDetailClient } from '@/components/features/projects/ProjectDetailClient';
 import type { Project, ProjectScope, ProjectStatus, Bid, BidStatus } from '@/types';
@@ -23,27 +22,16 @@ async function ProjectDetailContent({ params }: ProjectDetailPageProps) {
   }
 
   // Ambil data proyek dan relasi bids sekaligus dari PostgreSQL via Prisma
-  type ProjectWithBids = Prisma.ProjectGetPayload<{
+  // Ambil data proyek dan relasi bids sekaligus dari PostgreSQL via Prisma
+  // Galat koneksi basis data atau query diteruskan ke app/projects/[id]/error.tsx (Modul 7)
+  const dbProject = await prisma.project.findUnique({
+    where: { id },
     include: {
       bids: {
-        orderBy: { createdAt: 'desc' };
-      };
-    };
-  }>;
-  let dbProject: ProjectWithBids | null = null;
-  try {
-    dbProject = await prisma.project.findUnique({
-      where: { id },
-      include: {
-        bids: {
-          orderBy: { createdAt: 'desc' },
-        },
+        orderBy: { createdAt: 'desc' },
       },
-    });
-  } catch (error) {
-    console.error('Gagal mengambil data detail proyek dari PostgreSQL:', error);
-    dbProject = null;
-  }
+    },
+  });
 
   if (!dbProject) {
     notFound();

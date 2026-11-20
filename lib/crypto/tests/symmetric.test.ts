@@ -1,8 +1,6 @@
 import assert from 'node:assert';
 import {
   generateSymmetricKey,
-  encryptPayload,
-  decryptPayload,
   NONCE_LENGTH,
   TAG_LENGTH,
   KEY_LENGTH,

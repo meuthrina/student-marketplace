@@ -176,7 +176,7 @@ try {
 
   // Kasus D: Jebakan tipe boolean (True == 1) pada durasiHari
   assert.throws(
-    () => validateAndNormalizeProposalInput({ ...baseValid, durasiHari: true as any }),
+    () => validateAndNormalizeProposalInput({ ...baseValid, durasiHari: true as unknown as number }),
     (err: Error) => err instanceof ValidationError && err.message.includes('InvalidDurasiHari'),
     'Tipe boolean sebagai durasiHari wajib ditolak secara eksplisit!'
   );

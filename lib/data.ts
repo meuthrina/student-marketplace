@@ -1,6 +1,6 @@
 import { User, Project, Bid } from '@/types';
 import { mockProjects, mockCurrentUser, mockBids } from './mockData';
-import type { ProyekInput, MasukanProyek, RegisterInput, PenawaranInput } from './skema';
+import type { ProyekInput, RegisterInput, PenawaranInput } from './skema';
 import type { SessionUser } from './session';
 
 // Menyimpan data tiruan pada globalThis agar persisten saat Fast Refresh

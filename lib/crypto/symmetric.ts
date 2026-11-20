@@ -102,7 +102,7 @@ export function decryptPayload(
   try {
     const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return plaintext;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Fail-closed security principle: tolak seketika jika autentikasi tag gagal
     throw new Error('InvalidTag: Autentikasi integritas data gagal', { cause: error });
   }
