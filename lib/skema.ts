@@ -46,7 +46,9 @@ export const skemaProyek = z
     tenggatWaktu: z
       .string()
       .min(1, { error: "Tenggat waktu pengerjaan wajib diisi" }),
-    isCampusOnly: z.coerce.boolean().default(false),
+    // Modul 7: Mencegah jebakan z.coerce.boolean() yang mengubah string "false" menjadi true
+    // z.stringbool() memetakan "true" -> true, "false" -> false, dan menolak nilai lain secara deterministik
+    isCampusOnly: z.union([z.boolean(), z.stringbool()]).default(false),
     campusName: z.string().trim().optional(),
     keahlian: z.string().trim().optional(),
   })
