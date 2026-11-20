@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { skemaPenawaran, formatZodErrors } from "@/lib/skema";
 import { bacaSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
@@ -248,19 +249,10 @@ export async function batalkanPenawaran(
       }),
     ]);
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      if (err.code === "P2025") {
-        return {
-          success: false,
-          pesan: "Penawaran atau proyek yang ingin dibatalkan tidak ditemukan.",
-        };
-      }
-    }
-    console.error("Gagal membatalkan penawaran:", err);
-    return {
-      success: false,
-      pesan: "Gagal membatalkan penawaran pada basis data.",
-    };
+    // Modul 7: Galat tak terduga (misalnya P2025 saat data sudah dihapus di tab lain)
+    // tidak boleh ditelan diam-diam. Dicatat di terminal dan dilempar ke error boundary (error.tsx).
+    console.error("Gagal memproses transaksi pembatalan penawaran:", err);
+    throw err;
   }
 
   revalidatePath(`/projects/${projectId}`);
@@ -270,4 +262,37 @@ export async function batalkanPenawaran(
     success: true,
     pesan: "Penawaran berhasil dibatalkan.",
   };
+}
+
+/**
+ * Server Action: Penghapusan Proyek dengan Transaksi Atomik & Pengalihan (Modul 7 PAW)
+ * 
+ * Aturan Arsitektur Modul 7:
+ * 1. Transaksi Atomik: Menghapus relasi penawaran mahasiswa secara berantai bersama proyeknya ($transaction).
+ * 2. Tanpa Penelanan Galat: Galat tak terduga (P2025) dicatat di terminal dan diteruskan ke error.tsx.
+ * 3. Penempatan redirect(): WAJIB berada di luar blok try/catch karena redirect() Next.js
+ *    bekerja dengan melempar exception NEXT_REDIRECT. Jika di dalam try/catch, navigasi akan batal.
+ */
+export async function hapusProyek(id: string): Promise<void> {
+  const sesi = await bacaSession();
+  if (!sesi) {
+    throw new Error("Sesi tidak sah. Silakan masuk terlebih dahulu.");
+  }
+
+  if (!id) {
+    throw new Error("ID proyek tidak valid.");
+  }
+
+  // Transaksi penghapusan atomik (penawaran + proyek)
+  await prisma.$transaction([
+    prisma.bid.deleteMany({ where: { projectId: id } }),
+    prisma.project.delete({ where: { id } }),
+  ]);
+
+  // Revalidasi cache rute sebelum pengalihan
+  revalidatePath("/projects");
+  revalidatePath("/client/dashboard");
+
+  // PENTING (Modul 7): redirect() dipanggil di luar blok try/catch
+  redirect("/projects");
 }

@@ -205,10 +205,8 @@ export async function hapusProyek(id: string): Promise<StatusForm> {
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2025") {
-        return {
-          success: false,
-          pesan: "Proyek tidak ditemukan.",
-        };
+        // Modul 7: P2025 diteruskan ke error.tsx (tidak ditelan diam-diam)
+        throw err;
       }
       if (err.code === "P2003") {
         return {
@@ -219,10 +217,7 @@ export async function hapusProyek(id: string): Promise<StatusForm> {
       }
     }
     console.error("Gagal menghapus proyek:", err);
-    return {
-      success: false,
-      pesan: "Gagal menghapus proyek dari basis data.",
-    };
+    throw err;
   }
 
   revalidatePath("/projects");

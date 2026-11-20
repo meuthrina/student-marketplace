@@ -1,1 +1,1 @@
-export { kirimPenawaran, batalkanPenawaran, ubahPenawaran } from "./[id]/actions";
+export { kirimPenawaran, batalkanPenawaran, ubahPenawaran, hapusProyek } from "./[id]/actions";
